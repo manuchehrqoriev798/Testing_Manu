@@ -1,0 +1,148 @@
+.array-container{
+    background-color:rgb(255, 255, 255);
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+}
+
+.array-boxes {
+    display: flex;
+    gap: 5px;  /* Remove default gap */
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.insert-point {
+    width: 0;  /* Start with no width */
+    height: 50px;  /* Match array-box height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    overflow: visible;  /* Allow button to show outside container */
+    position: relative;
+}
+
+.insert-point:hover {
+    width: 30px;  /* Expand on hover */
+    margin: 0 5px;  /* Add some spacing */
+}
+
+.insert-button {
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: none;
+    background-color: #61fbc0;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    padding: 0;
+    transition: all 0.3s ease;
+    opacity: 0;  /* Start invisible */
+    z-index: 2;
+}
+
+.insert-point:hover .insert-button {
+    opacity: 1;  /* Show on hover */
+    transform: scale(1);
+}
+
+.insert-button:hover {
+    transform: scale(1.2);
+    background-color: #21a1f1;
+}
+
+.array-box {
+    min-width: 50px;
+    max-width: 100px;
+    width: auto;
+    height: 50px;
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    border-radius: 8px;
+    cursor: move;
+    transition: all 0.3s ease;
+    animation: scaleIn 0.3s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.array-box input {
+    width: 100%;
+    height: 30px;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-size: inherit;
+    outline: none;
+    padding: 0;
+}
+
+.array-box input::-webkit-inner-spin-button,
+.array-box input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #61fbc0;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  
+  button:hover {
+    background-color: #21a1f1;
+  }
+  
+ 
+  
+
+  
+  .array-box:hover {
+      transform: scale(1.1);
+  }
+  
+  /* Animation for new elements */
+  @keyframes scaleIn {
+      from {
+          transform: scale(0);
+          opacity: 0;
+      }
+      to {
+          transform: scale(1);
+          opacity: 1;
+      }
+  }
+  
+  /* Animation for removing elements */
+  .array-box.removing {
+      position: absolute;
+      animation: scaleOut 0.3s ease forwards;
+  }
+  
+  @keyframes scaleOut {
+      to {
+          transform: scale(0);
+          opacity: 0;
+      }
+  }
+  
+  .array-box.dragging {
+      opacity: 0.5;
+      transform: scale(1.05);
+  }
+

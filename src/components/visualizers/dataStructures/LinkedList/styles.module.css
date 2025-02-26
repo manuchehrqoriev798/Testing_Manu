@@ -1,0 +1,473 @@
+.visualizer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.area {
+  width: 100%;
+  height: calc(100% - 40px);
+  margin-top: 40px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+  cursor: auto !important;
+}
+
+.area:active {
+  cursor: grabbing !important;
+}
+
+.content {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.05s linear;
+}
+
+.nodes-container {
+  display: flex;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  align-items: center;
+}
+
+.node-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin: 0 40px;
+  padding: 0 30px;
+}
+
+.node {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background-color: #fff;
+  border: 2px solid #2196F3;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+.nodeContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.controls {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 2;
+}
+
+.node:hover .controls {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.btn {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.left {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.right {
+  background-color: #2196F3;
+  color: white;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.hovered {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(33, 150, 243, 0.3);
+}
+
+.add-node-btn {
+  width: 20px;
+  height: 20px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  z-index: 3;
+  position: absolute;
+  transition: background-color 0.2s ease;
+}
+
+.add-node-btn.left {
+  left: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.add-node-btn.right {
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.node-wrapper:hover .add-node-btn {
+  display: flex;
+}
+
+.add-node-btn:hover {
+  background-color: #1976D2;
+}
+
+.connection-line {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  width: 80px;
+  display: flex;
+  align-items: center;
+}
+
+.connection-line::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background-color: #333;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.arrow-head {
+  position: absolute;
+  right: -2px;
+  width: 0;
+  height: 0;
+  border-left: 12px solid #333;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+  transition: all 0.3s ease;
+}
+
+.connection-line:hover::before {
+  background-color: #2196F3;
+  height: 4px;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.connection-line:hover .arrow-head {
+  border-left: 14px solid #2196F3;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  filter: drop-shadow(0 2px 4px rgba(33, 150, 243, 0.3));
+}
+
+.delete-node-btn {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 20px;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  z-index: 2;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.delete-node-btn:hover {
+  background-color: #cc0000;
+  transform: translateX(-50%) scale(1.1);
+}
+
+.node-input {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-size: 14px;
+  outline: none;
+  padding: 0;
+}
+
+.node-input::placeholder {
+  color: #999;
+}
+
+.node.appear {
+  animation: nodeAppearPulse 0.5s ease-out;
+}
+
+.node.delete {
+  animation: nodeDelete 0.3s ease-out forwards;
+}
+
+.back-btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: #666;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  z-index: 9999;
+}
+
+.back-btn:hover {
+  background-color: #555;
+  transform: scale(1.05);
+}
+
+.zoom-controls {
+  position: absolute;
+  right: 20px;
+  bottom: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 10;
+  background: white;
+  padding: 5px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.zoom-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #333;
+  transition: all 0.2s ease;
+}
+
+.zoom-btn:hover {
+  background: #f5f5f5;
+  transform: scale(1.05);
+}
+
+.zoom-btn:active {
+  background: #e5e5e5;
+  transform: scale(0.95);
+}
+
+.zoom-level {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  padding: 4px 0;
+}
+
+@keyframes nodeAppearPulse {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes nodeDelete {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+.node-context-menu {
+  position: fixed;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 4px;
+  z-index: 1000;
+}
+
+.node-context-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  color: #333;
+}
+
+.node-context-menu button:hover {
+  background-color: #f5f5f5;
+}
+
+.node-context-menu button:active {
+  background-color: #e5e5e5;
+}
+
+.leftBtn {
+  position: absolute;
+  left: -25px;
+  width: 24px;
+  height: 24px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.rightBtn {
+  position: absolute;
+  right: -25px;
+  width: 24px;
+  height: 24px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.node:hover .leftBtn,
+.node:hover .rightBtn {
+  display: flex;
+}
+
+.arrow {
+  position: absolute;
+  height: 2px;
+  pointer-events: none;
+  z-index: 0;
+  transition: all 0.3s ease;
+}
+
+.arrowLine {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background-color: #2196F3;
+  transform-origin: left center;
+}
+
+.arrowHead {
+  position: absolute;
+  right: -8px;
+  top: -4px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid #2196F3;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+
+.nodeLabel {
+  cursor: text;
+  min-width: 20px;
+  text-align: center;
+}
+
+.deleteBtn {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 20px;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  z-index: 2;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.deleteBtn:hover {
+  background-color: #cc0000;
+  transform: translateX(-50%) scale(1.1);
+}

@@ -1,0 +1,206 @@
+.visualizer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background-color: #f8f9fa;
+}
+
+.controls {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.input-form {
+  display: flex;
+  gap: 10px;
+}
+
+.input {
+  padding: 8px 12px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  width: 150px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.enqueue-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.dequeue-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.peek-btn {
+  background-color: #2196F3;
+  color: white;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.back-btn {
+  padding: 8px 16px;
+  background-color: #666;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.container {
+  width: 90%;
+  max-width: 800px;
+  min-height: 200px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 40px;
+}
+
+.labels {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  position: absolute;
+  top: -30px;
+}
+
+.front-label, .rear-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: bold;
+}
+
+.elements {
+  width: 100%;
+  min-height: 100px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.element {
+  min-width: 80px;
+  height: 80px;
+  padding: 10px;
+  background: white;
+  border: 2px solid #2c3e50;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.element.new {
+  animation: slideInFromRight 0.3s ease;
+}
+
+.element.removing {
+  animation: slideOutToLeft 0.3s ease;
+  opacity: 0;
+}
+
+.element.peeking {
+  background-color: #e3f2fd;
+  transform: scale(1.05);
+  border-color: #2196F3;
+  box-shadow: 0 0 15px rgba(33, 150, 243, 0.3);
+}
+
+.element-value {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.element-index {
+  position: absolute;
+  bottom: -20px;
+  font-size: 12px;
+  color: #666;
+}
+
+.empty {
+  width: 100%;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.error {
+  color: #f44336;
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #ffebee;
+  border-radius: 4px;
+  width: 100%;
+  max-width: 600px;
+  text-align: center;
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .input-form {
+    flex-direction: column;
+  }
+
+  .input {
+    width: 100%;
+  }
+} 

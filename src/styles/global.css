@@ -1,0 +1,38 @@
+/* Global styles */
+:root {
+  --color-primary: #4299e1;
+  --color-secondary: #ed8936;
+  --color-background: #f7fafc;
+  --color-text: #1a202c;
+  --color-light: #e2e8f0;
+  --color-dark: #2d3748;
+  --color-success: #48bb78;
+  --color-warning: #ecc94b;
+  --color-danger: #f56565;
+  --color-info: #4299e1;
+  
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Form element normalizations */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}

@@ -1,0 +1,309 @@
+:root {
+    --shift-distance: 30px;
+   
+    --scale_factor: 1;
+  }
+
+.array-container-weighted{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-size: 1.4rem;
+    color: white;
+    padding: 10px;
+    width: var(--base-width);
+    min-width: 200px;
+}
+.array-container-weighted{
+    background-color:rgb(255, 255, 255);
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+   
+    transition: width 0.3s ease, transform 0.3s ease;
+    position: relative;
+    --base-width: 50;
+    
+    transform: scaleX(var(--scale_factor)); 
+}
+.array-container-weighted .array-name-weighted{
+    background-color:rgb(75, 255, 171);
+    border-radius: 8px;
+    height: 40px;
+    width: auto;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+}
+
+.array-boxes-weighted {
+    display: flex;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 5px;
+    min-width: max-content;
+    transition: transform 0.3s ease;
+    transform: scaleX(var(--scale_factor)); 
+   
+}
+
+.insert-point-weighted {
+    width: 10px;
+    height: 60px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+   
+    z-index: 2;
+}
+
+.insert-button-weighted {
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: none;
+    background-color: #61fbc0;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    padding: 0;
+    
+    opacity: 0;
+    
+    z-index: 2;
+   
+    
+}
+
+/* Move boxes based on their position relative to insert point */
+.array-box-weighted.before-insert {
+    transform: translateX(calc(-1 * var(--shift-distance)));
+}
+
+.array-box-weighted.after-insert {
+    transform: translateX(var(--shift-distance));
+}
+
+
+.insert-point-weighted:hover{
+   transform: scaleX(5);
+}
+.insert-point-weighted:hover .insert-button-weighted {
+    opacity: 1;
+    transform: scaleX(0.2) scaleY(1);
+    transition: transform 0.1s ease, opacity 0.3s ease;
+  }
+  
+
+.insert-button-weighted:hover {
+    background-color: #21a1f1;
+}
+
+.array-container-weighted:has(.insert-point-weighted:hover){
+    --scale_factor: calc((var(--base-width ) + 50) / var(--base-width) );
+}
+
+.array-boxes-weighted:has(.insert-point-weighted:hover){
+    --scale_factor: calc(1/((var(--base-width ) + 50) / var(--base-width) ));
+}
+
+
+
+
+/* Base array box styles with a springy transform transition */
+.array-box-weighted {
+    min-width: 50px;
+    width: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    border-radius: 8px;
+    cursor: move;
+    /* Use a spring-like cubic-bezier and a slightly longer duration */
+    transition: transform 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: scaleIn 0.3s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transform: translateX(0);
+    position: relative;
+    
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-size: 1.4rem;
+    color: white;
+    padding: 10px;
+    transition: transform height 0.3s ease;
+}
+
+.array-box-weighted input {
+    min-width: 50px;
+    padding: 10px;
+    width: auto;
+    height: 50px;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-size: inherit;
+    outline: none;
+    padding: 0;
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-size: 1.8rem;
+    color: white;
+    padding: 10px;
+}
+
+/* Hide number input spinners */
+.array-box-weighted input::-webkit-inner-spin-button,
+.array-box-weighted input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #61fbc0;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: scale 0.3s ease;
+  }
+  
+  button:hover {
+    background-color: #21a1f1;
+  }
+  
+ 
+  .array-box-weighted:hover {
+      transform: scale(1.1);
+  }
+  
+  /* Animation for new elements */
+  @keyframes scaleIn {
+      from {
+          transform: scale(0);
+          opacity: 0;
+      }
+      to {
+          transform: scale(1);
+          opacity: 1;
+      }
+  }
+  
+  /* Animation for removing elements */
+  .array-box-weighted.removing {
+      position: absolute;
+      animation: scaleOut 0.3s ease forwards;
+  }
+  
+  @keyframes scaleOut {
+      to {
+          transform: scale(0);
+          opacity: 0;
+      }
+  }
+  
+  .array-box-weighted.dragging {
+      opacity: 0;
+      transform: scale(1.1);
+      z-index: 1000;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+      animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+      0% {
+          transform: scale(1.1);
+      }
+      50% {
+          transform: scale(1.15);
+      }
+      100% {
+          transform: scale(1.1);
+      }
+  }
+
+/* When any insert point is hovered, expand the container */
+
+
+
+.array-box-weighted .array-box-index {
+    position: absolute;
+    bottom: 5px;  /* Adjust this value to control distance from bottom */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 15px;
+    color: #f8f8f8;
+    opacity: 0.8;
+    font-weight: 300;
+}
+
+.array-box-weighted .array-box-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.4rem;
+}
+
+.window-weighted {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    cursor: grab;
+    user-select: none;
+    /* width: var(--base-width); */
+    width: fit-content;
+   
+   
+    transform-origin: center;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+
+.window-weighted.dragging {
+    transition: none;
+    cursor: grabbing;
+}
+
+.array-box-weighted.shift-right {
+    transform: translateX(60px); /* Adjust value based on your box size */
+}
+
+.array-box-weighted.shift-left {
+    transform: translateX(-60px);
+}
+
+.array-box-weighted.being-dragged {
+    transition: none; /* No transition for the dragged element */
+}
+
+
+
+
+
+
+
+
+
+
+
