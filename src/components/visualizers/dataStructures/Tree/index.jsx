@@ -1,18 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import ReactFlow, { 
-  Controls, 
-  Background,
-  MarkerType,
-  useNodesState,
-  useEdgesState
-} from 'reactflow';
-import 'reactflow/dist/style.css';
 import styles from './styles.module.css';
 
 const TreeVisualizer = ({ onActivate, onBack }) => {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [nextNodeId, setNextNodeId] = useState(1);
+  const [nodes, setNodes] = useState([]);
+  const [isTreeCreated, setIsTreeCreated] = useState(true);
   const treeAreaRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -122,10 +113,11 @@ const TreeVisualizer = ({ onActivate, onBack }) => {
     if (!isLeft && parent.rightChildId) return;
 
     const newNode = {
-      id: `node-${nextNodeId}`,
-      data: { label: nextNodeId.toString() },
+      id: `node-${nodes.length + 1}`,
+      label: (nodes.length + 1).toString(),
+      level: parent.level + 1,
       position: calculateNodePosition(parent, isLeft),
-      type: 'default',
+      isRoot: false,
       parentId: parentId,
       leftChildId: null,
       rightChildId: null
@@ -147,19 +139,6 @@ const TreeVisualizer = ({ onActivate, onBack }) => {
     // Only recalculate positions for affected nodes
     const recalculatedNodes = updateAffectedNodePositions(updatedNodes, newNode.id);
     setNodes(recalculatedNodes);
-    setNextNodeId(prev => prev + 1);
-
-    // If there are existing nodes, connect to the new node
-    if (nodes.length > 0) {
-      const newEdge = {
-        id: `edge-${parent.id}-${newNode.id}`,
-        source: parent.id,
-        target: newNode.id,
-        type: 'smoothstep',
-        markerEnd: { type: MarkerType.ArrowClosed }
-      };
-      setEdges(prev => [...prev, newEdge]);
-    }
   };
 
   const handleWheel = (e) => {
@@ -226,14 +205,19 @@ const TreeVisualizer = ({ onActivate, onBack }) => {
     setTimeout(() => {
       const rootNode = {
         id: 'node-1',
-        data: { label: '1' },
-        position: { x: window.innerWidth / 2, y: 100 },
-        type: 'default',
+        label: '1',
+        level: 0,
+        position: {
+          x: window.innerWidth / 2,
+          y: 100
+        },
+        isRoot: true,
         parentId: null,
         leftChildId: null,
         rightChildId: null
       };
       setNodes([rootNode]);
+      setIsTreeCreated(true);
       if (onActivate) onActivate();
     }, 0);
   }, []);
@@ -256,85 +240,138 @@ const TreeVisualizer = ({ onActivate, onBack }) => {
     const targetNode = newNodes.find(n => n.id === targetId);
     
     // Switch labels
-    const tempLabel = sourceNode.data.label;
-    sourceNode.data.label = targetNode.data.label;
-    targetNode.data.label = tempLabel;
+    const tempLabel = sourceNode.label;
+    sourceNode.label = targetNode.label;
+    targetNode.label = tempLabel;
     
     setNodes(newNodes);
     setRightClickMenu({ nodeId: null, position: { x: 0, y: 0 } });
   };
 
-  const createNode = () => {
-    addChild(nodes[nodes.length - 1].id, true);
-  };
-
   return (
     <div className={styles.visualizer}>
-      <div className={styles.controls}>
-        <button onClick={onBack} className={styles.btn}>Back</button>
-        <button onClick={createNode} className={styles.btn}>Add Node</button>
-      </div>
-      <div className={styles.flowContainer}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          fitView
-        >
-          <Background />
-          <Controls />
-        </ReactFlow>
-      </div>
-
-      {rightClickMenu.nodeId && (
-        <div
-          className={styles.contextMenu}
+      <div className={styles.container} onClick={handleClickOutside}>
+        <div className={styles.controls}>
+          <button className={styles.backBtn} onClick={onBack}>
+            Back to Home
+          </button>
+        </div>
+        <div className={styles.area} 
+          ref={treeAreaRef}
+          onMouseDown={handleCanvasDragStart}
+          onMouseMove={handleCanvasDrag}
+          onMouseUp={handleCanvasDragEnd}
+          onMouseLeave={handleCanvasDragEnd}
           style={{
-            left: rightClickMenu.position.x,
-            top: rightClickMenu.position.y
+            cursor: isDraggingCanvas ? 'grabbing' : 'default'
           }}
         >
-          {nodes.find(n => n.id === rightClickMenu.nodeId)?.leftChildId && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSwitchNodes(rightClickMenu.nodeId, nodes.find(n => n.id === rightClickMenu.nodeId)?.leftChildId);
-              }}
-            >
-              Switch ({nodes.find(n => n.id === rightClickMenu.nodeId)?.data.label || '?'}) with left child ({nodes.find(n => n.id === nodes.find(n => n.id === rightClickMenu.nodeId)?.leftChildId)?.data.label || '?'})
-            </button>
-          )}
-          {nodes.find(n => n.id === rightClickMenu.nodeId)?.rightChildId && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSwitchNodes(rightClickMenu.nodeId, nodes.find(n => n.id === rightClickMenu.nodeId)?.rightChildId);
-              }}
-            >
-              Switch ({nodes.find(n => n.id === rightClickMenu.nodeId)?.data.label || '?'}) with right child ({nodes.find(n => n.id === nodes.find(n => n.id === rightClickMenu.nodeId)?.rightChildId)?.data.label || '?'})
-            </button>
-          )}
-          {nodes.find(n => n.id === rightClickMenu.nodeId)?.parentId && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSwitchNodes(rightClickMenu.nodeId, nodes.find(n => n.id === rightClickMenu.nodeId)?.parentId);
-              }}
-            >
-              Switch ({nodes.find(n => n.id === rightClickMenu.nodeId)?.data.label || '?'}) with parent ({nodes.find(n => n.id === nodes.find(n => n.id === rightClickMenu.nodeId)?.parentId)?.data.label || '?'})
-            </button>
-          )}
+          <div className={styles.content} style={{
+            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+            transformOrigin: '0 0'
+          }}>
+            {nodes.map(node => {
+              const parent = nodes.find(n => n.id === node.parentId);
+              return parent ? (
+                <div
+                  key={`connection-${node.id}`}
+                  className={styles.connection}
+                  style={calculateConnectionPath(parent, node)}
+                />
+              ) : null;
+            })}
+            {nodes.map(node => (
+              <div
+                key={node.id}
+                className={`${styles.node} ${node.isRoot ? styles.root : ''}`}
+                style={{
+                  left: node.position.x,
+                  top: node.position.y
+                }}
+                onMouseEnter={() => setHoveredNode(node.id)}
+                onMouseLeave={() => setHoveredNode(null)}
+                onContextMenu={(e) => handleContextMenu(e, node.id)}
+              >
+                <input
+                  type="text"
+                  value={node.label}
+                  onChange={(e) => {
+                    const newNodes = nodes.map(n =>
+                      n.id === node.id ? { ...n, label: e.target.value } : n
+                    );
+                    setNodes(newNodes);
+                  }}
+                  className={styles.nodeInput}
+                  onClick={(e) => e.stopPropagation()}
+                  placeholder="?"
+                />
+                {hoveredNode === node.id && (
+                  <>
+                    {!node.leftChildId && (
+                      <button
+                        className={`${styles.addBtn} ${styles.addBtnLeft}`}
+                        onClick={() => addChild(node.id, true)}
+                      >
+                        +
+                      </button>
+                    )}
+                    {!node.rightChildId && (
+                      <button
+                        className={`${styles.addBtn} ${styles.addBtnRight}`}
+                        onClick={() => addChild(node.id, false)}
+                      >
+                        +
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+            {rightClickMenu.nodeId && (
+              <div 
+                className={styles.contextMenu}
+                style={{
+                  left: rightClickMenu.position.x,
+                  top: rightClickMenu.position.y
+                }}
+              >
+                {nodes.find(n => n.id === rightClickMenu.nodeId)?.leftChildId && (
+                  <button
+                    onClick={() => {
+                      const node = nodes.find(n => n.id === rightClickMenu.nodeId);
+                      handleSwitchNodes(rightClickMenu.nodeId, node.leftChildId);
+                    }}
+                  >
+                    Switch ({nodes.find(n => n.id === rightClickMenu.nodeId)?.label || '?'}) with left child ({nodes.find(n => n.id === nodes.find(n => n.id === rightClickMenu.nodeId)?.leftChildId)?.label || '?'})
+                  </button>
+                )}
+                {nodes.find(n => n.id === rightClickMenu.nodeId)?.rightChildId && (
+                  <button
+                    onClick={() => {
+                      const node = nodes.find(n => n.id === rightClickMenu.nodeId);
+                      handleSwitchNodes(rightClickMenu.nodeId, node.rightChildId);
+                    }}
+                  >
+                    Switch ({nodes.find(n => n.id === rightClickMenu.nodeId)?.label || '?'}) with right child ({nodes.find(n => n.id === nodes.find(n => n.id === rightClickMenu.nodeId)?.rightChildId)?.label || '?'})
+                  </button>
+                )}
+                {nodes.find(n => n.id === rightClickMenu.nodeId)?.parentId && (
+                  <button
+                    onClick={() => {
+                      const node = nodes.find(n => n.id === rightClickMenu.nodeId);
+                      handleSwitchNodes(rightClickMenu.nodeId, node.parentId);
+                    }}
+                  >
+                    Switch ({nodes.find(n => n.id === rightClickMenu.nodeId)?.label || '?'}) with parent ({nodes.find(n => n.id === nodes.find(n => n.id === rightClickMenu.nodeId)?.parentId)?.label || '?'})
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
 
-export default function WrappedTreeVisualizer(props) {
-  return (
-    <ReactFlow.Provider>
-      <TreeVisualizer {...props} />
-    </ReactFlow.Provider>
-  );
-} 
+export default TreeVisualizer; 
