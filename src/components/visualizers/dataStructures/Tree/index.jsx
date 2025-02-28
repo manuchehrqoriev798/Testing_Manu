@@ -68,81 +68,47 @@ const TreeVisualizerContent = ({ onActivate, onBack }) => {
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const LEVEL_HEIGHT = 120;
-  const NODE_WIDTH = 150;
+  const NODE_WIDTH = 75; // Reduced from 150 for a more compact tree
 
-  const getSubtreeWidth = useCallback((nodeId, level) => {
+  const getSubtreeWidth = useCallback((nodes, nodeId, level) => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return 0;
     
-    // Base spacing increases with level
     const baseSpacing = Math.pow(2, level) * NODE_WIDTH;
     
     if (!node.data.leftChildId && !node.data.rightChildId) {
       return baseSpacing;
     }
     
-    const leftWidth = node.data.leftChildId ? getSubtreeWidth(node.data.leftChildId, level + 1) : 0;
-    const rightWidth = node.data.rightChildId ? getSubtreeWidth(node.data.rightChildId, level + 1) : 0;
+    const leftWidth = node.data.leftChildId ? getSubtreeWidth(nodes, node.data.leftChildId, level + 1) : 0;
+    const rightWidth = node.data.rightChildId ? getSubtreeWidth(nodes, node.data.rightChildId, level + 1) : 0;
     
     return Math.max(baseSpacing, leftWidth + rightWidth);
-  }, [nodes]);
+  }, []);
 
-  const calculateNodePosition = useCallback((parentNode, isLeft, level) => {
-    const subtreeWidth = getSubtreeWidth(parentNode.id, level);
-    const horizontalOffset = subtreeWidth / 2;
-    
-    return {
-      x: parentNode.position.x + (isLeft ? -horizontalOffset : horizontalOffset),
-      y: parentNode.position.y + LEVEL_HEIGHT
-    };
-  }, [getSubtreeWidth]);
+  const updateNodePositions = useCallback((nodes) => {
+    const root = nodes.find(n => n.data.isRoot);
+    if (!root) return nodes;
 
-  const updateAffectedNodePositions = useCallback((nodeList, startNodeId) => {
-    const getPathToRoot = (nodeId, path = []) => {
-      const node = nodeList.find(n => n.id === nodeId);
-      if (!node) return path;
-      path.push(node.id);
-      if (node.data.parentId) {
-        return getPathToRoot(node.data.parentId, path);
-      }
-      return path;
-    };
+    const updatePositions = (nodeId, x, level) => {
+      const node = nodes.find(n => n.id === nodeId);
+      if (!node) return [];
 
-    const affectedNodeIds = getPathToRoot(startNodeId);
-    let updatedNodes = [...nodeList];
+      const updatedNode = {
+        ...node,
+        position: { x, y: level * LEVEL_HEIGHT }
+      };
 
-    const updateSubtree = (nodeId, x, level) => {
-      const currentNode = updatedNodes.find(n => n.id === nodeId);
-      if (!currentNode) return;
-
-      if (affectedNodeIds.includes(nodeId)) {
-        currentNode.position = { x, y: level * LEVEL_HEIGHT };
-      }
-
-      const subtreeWidth = getSubtreeWidth(nodeId, level);
+      const subtreeWidth = getSubtreeWidth(nodes, nodeId, level);
       const spacing = subtreeWidth / 2;
 
-      if (currentNode.data.leftChildId) {
-        updateSubtree(
-          currentNode.data.leftChildId,
-          x - spacing,
-          level + 1
-        );
-      }
-      if (currentNode.data.rightChildId) {
-        updateSubtree(
-          currentNode.data.rightChildId,
-          x + spacing,
-          level + 1
-        );
-      }
+      const leftChild = node.data.leftChildId ? updatePositions(node.data.leftChildId, x - spacing, level + 1) : [];
+      const rightChild = node.data.rightChildId ? updatePositions(node.data.rightChildId, x + spacing, level + 1) : [];
+
+      return [updatedNode, ...leftChild, ...rightChild];
     };
 
-    const highestAffectedNode = nodeList.find(n => n.id === affectedNodeIds[affectedNodeIds.length - 1]);
-    const level = Math.floor(highestAffectedNode.position.y / LEVEL_HEIGHT);
-    updateSubtree(highestAffectedNode.id, highestAffectedNode.position.x, level);
-
-    return updatedNodes;
+    return updatePositions(root.id, root.position.x, 0);
   }, [getSubtreeWidth]);
 
   const onNodesChange = useCallback((changes) => {
@@ -175,13 +141,8 @@ const TreeVisualizerContent = ({ onActivate, onBack }) => {
       const newNodeId = `node-${currentNodes.length + 1}`;
       const parentLevel = Math.floor(parent.position.y / LEVEL_HEIGHT);
       
-      // Calculate horizontal spacing based on parent's position and level
-      const spacing = Math.pow(2, parentLevel) * NODE_WIDTH;
-      
-      const position = {
-        x: parent.position.x + (isLeft ? -spacing : spacing),
-        y: parent.position.y + LEVEL_HEIGHT
-      };
+      // Temporary position; will be adjusted by updateNodePositions
+      const position = { x: 0, y: (parentLevel + 1) * LEVEL_HEIGHT };
 
       const newNode = {
         id: newNodeId,
@@ -206,7 +167,7 @@ const TreeVisualizerContent = ({ onActivate, onBack }) => {
         }
       };
 
-      const updatedNodes = currentNodes.map(n => 
+      const updatedNodesWithNewChild = currentNodes.map(n => 
         n.id === parentId ? updatedParent : n
       ).concat(newNode);
 
@@ -220,9 +181,10 @@ const TreeVisualizerContent = ({ onActivate, onBack }) => {
         }
       ]);
 
-      return updatedNodes;
+      // Recalculate all node positions
+      return updateNodePositions(updatedNodesWithNewChild);
     });
-  }, []);
+  }, [updateNodePositions]);
 
   useEffect(() => {
     if (nodes.length === 0) {

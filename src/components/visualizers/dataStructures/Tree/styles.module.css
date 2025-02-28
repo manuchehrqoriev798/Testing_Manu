@@ -27,12 +27,12 @@
 
 .nodeWrapper {
   position: relative;
-  padding: 30px;
+  padding: 15px;
 }
 
 .node {
-  width: 50px;
-  height: 50px;
+  width: 36px;
+  height: 36px;
   background: white;
   border: 2px solid #2c3e50;
   border-radius: 50%;
@@ -65,8 +65,8 @@
 
 .addBtn {
   position: absolute;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   background-color: #27ae60;
   color: white;
   border: none;
@@ -75,7 +75,7 @@
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
   z-index: 2;
   transition: all 0.2s ease;
 }
@@ -86,13 +86,13 @@
 }
 
 .addBtnLeft {
-  left: 0;
-  bottom: 15px;
+  left: -5px;
+  bottom: 10px;
 }
 
 .addBtnRight {
-  right: 0;
-  bottom: 15px;
+  right: -5px;
+  bottom: 10px;
 }
 
 .levelIndicator {
@@ -141,12 +141,12 @@
 }
 
 .nodeInput {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   border: none;
   background: transparent;
   text-align: center;
-  font-size: 14px;
+  font-size: 12px;
   outline: none;
   padding: 0;
 }
