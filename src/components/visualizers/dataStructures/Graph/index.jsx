@@ -53,7 +53,6 @@ const CustomNode = ({ data, id }) => {
   };
 
   const handleNodeAreaClick = (e) => {
-    // If click is not directly on the node input or delete button
     if (!e.target.classList.contains(styles.nodeInput)) {
       e.stopPropagation();
       
@@ -90,7 +89,9 @@ const CustomNode = ({ data, id }) => {
       setEdges((edges) => [...edges, {
         id: `e${id}-${newNodeId}`,
         source: id,
-        target: newNodeId
+        target: newNodeId,
+        sourceHandle: 'bottom',
+        targetHandle: 'top'
       }]);
     }
   };
@@ -105,8 +106,9 @@ const CustomNode = ({ data, id }) => {
     >
       <div className={styles.node}>
         <Handle 
+          id="top"
           type="target" 
-          position={Position.Left} 
+          position={Position.Top} 
           style={{ opacity: 0 }}
         />
         <input
@@ -127,8 +129,9 @@ const CustomNode = ({ data, id }) => {
           className={styles.nodeInput}
         />
         <Handle 
+          id="bottom"
           type="source" 
-          position={Position.Right}
+          position={Position.Bottom}
           style={{ opacity: 0 }}
         />
       </div>
@@ -161,8 +164,8 @@ const initialNodes = [
   }
 ];
 
-// Define initial edges with source/target handles
-const initialEdges = [];  // Empty initial edges array
+// Define initial edges with proper marker settings
+const initialEdges = [];
 
 const GraphVisualizerContent = ({ onBack }) => {
   const reactFlowInstance = useReactFlow();
@@ -180,7 +183,18 @@ const GraphVisualizerContent = ({ onBack }) => {
   }, []);
 
   const onConnect = useCallback((params) => {
-    setEdges((eds) => addEdge(params, eds));
+    setEdges((eds) => addEdge({
+      ...params,
+      type: 'smoothstep',
+      sourceHandle: 'bottom',
+      targetHandle: 'top',
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 20,
+        height: 20,
+        color: '#333',
+      },
+    }, eds));
   }, []);
 
   const handleMouseMove = useCallback((event) => {
