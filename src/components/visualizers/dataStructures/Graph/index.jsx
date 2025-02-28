@@ -107,7 +107,11 @@ const CustomNode = ({ data, id }) => {
       className={styles.nodeWrapper}
     >
       <div className={styles.node}>
-        <Handle type="target" position={Position.Left} />
+        <Handle 
+          type="target" 
+          position={Position.Left} 
+          style={{ opacity: 0 }}
+        />
         <input
           type="text"
           value={data.label}
@@ -125,7 +129,11 @@ const CustomNode = ({ data, id }) => {
           onClick={(e) => e.stopPropagation()}
           className={styles.nodeInput}
         />
-        <Handle type="source" position={Position.Right} />
+        <Handle 
+          type="source" 
+          position={Position.Right}
+          style={{ opacity: 0 }}
+        />
       </div>
       {showAddButton && (
         <div 
