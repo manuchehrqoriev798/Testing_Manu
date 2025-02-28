@@ -21,36 +21,46 @@ const ADD_BUTTON_THRESHOLD = 100;
 const CustomNode = ({ data, id }) => {
   const [showAddButton, setShowAddButton] = useState(false);
   const [addButtonPos, setAddButtonPos] = useState({ x: 0, y: 0 });
-  const [angle, setAngle] = useState(0);
   const nodeRef = useRef(null);
   const { setNodes, setEdges, getNode } = useReactFlow();
+  const mouseMoveThrottleRef = useRef(null);
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = useCallback((e) => {
     if (!nodeRef.current) return;
 
-    const rect = nodeRef.current.getBoundingClientRect();
-    const nodeCenter = {
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2
-    };
+    // Throttle mouse move updates
+    if (mouseMoveThrottleRef.current) return;
+    mouseMoveThrottleRef.current = true;
+    
+    requestAnimationFrame(() => {
+      const rect = nodeRef.current.getBoundingClientRect();
+      const nodeCenter = {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2
+      };
 
-    const dx = e.clientX - nodeCenter.x;
-    const dy = e.clientY - nodeCenter.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+      const dx = e.clientX - nodeCenter.x;
+      const dy = e.clientY - nodeCenter.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
 
-    if (distance < 80 && distance > 10) {
-      const rawAngle = Math.atan2(dy, dx);
-      setAngle(rawAngle);
-      
-      setAddButtonPos({
-        x: Math.cos(rawAngle) * distance,
-        y: Math.sin(rawAngle) * distance
-      });
-      setShowAddButton(true);
-    } else {
-      setShowAddButton(false);
-    }
-  };
+      if (distance >= 35 && distance <= 80) {
+        const angle = Math.atan2(dy, dx);
+        setAddButtonPos({
+          x: Math.cos(angle) * 60, // Fixed distance for smoother appearance
+          y: Math.sin(angle) * 60
+        });
+        setShowAddButton(true);
+      } else {
+        setShowAddButton(false);
+      }
+
+      mouseMoveThrottleRef.current = false;
+    });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setShowAddButton(false);
+  }, []);
 
   const handleNodeAreaClick = (e) => {
     if (!e.target.classList.contains(styles.nodeInput)) {
@@ -100,7 +110,7 @@ const CustomNode = ({ data, id }) => {
     <div
       ref={nodeRef}
       onMouseMove={handleMouseMove}
-      onMouseLeave={() => setShowAddButton(false)}
+      onMouseLeave={handleMouseLeave}
       onClick={handleNodeAreaClick}
       className={styles.nodeWrapper}
     >
@@ -137,7 +147,7 @@ const CustomNode = ({ data, id }) => {
       </div>
       {showAddButton && (
         <div 
-          className={styles.addButtonIndicator}
+          className={`${styles.addButtonIndicator} ${styles.fadeIn}`}
           style={{
             transform: `translate(${addButtonPos.x}px, ${addButtonPos.y}px)`
           }}
