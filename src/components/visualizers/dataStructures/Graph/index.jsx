@@ -38,16 +38,13 @@ const CustomNode = ({ data, id }) => {
     const dy = e.clientY - nodeCenter.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
-    // Increased detection radius to 120px
-    if (distance < 120) {
+    if (distance < 80 && distance > 10) {
       const rawAngle = Math.atan2(dy, dx);
-      const snappedAngle = Math.round(rawAngle / (Math.PI / 4)) * (Math.PI / 4);
-      setAngle(snappedAngle);
+      setAngle(rawAngle);
       
-      // Position button at fixed distance from node center
       setAddButtonPos({
-        x: Math.cos(snappedAngle) * 60, // Increased distance from node
-        y: Math.sin(snappedAngle) * 60
+        x: Math.cos(rawAngle) * distance,
+        y: Math.sin(rawAngle) * distance
       });
       setShowAddButton(true);
     } else {
@@ -158,28 +155,14 @@ const nodeTypes = {
 const initialNodes = [
   {
     id: '1',
-    type: 'custom',
-    data: { label: 'Node 1' },
-    position: { x: 100, y: 100 },
-  },
-  {
-    id: '2', 
-    type: 'custom',
-    data: { label: 'Node 2' },
-    position: { x: 300, y: 100 },
+    position: { x: 250, y: 200 },
+    data: { label: '' },
+    type: 'custom'
   }
 ];
 
 // Define initial edges with source/target handles
-const initialEdges = [
-  {
-    id: 'e1-2',
-    source: '1',
-    target: '2',
-    sourceHandle: 'right', // Add handle IDs
-    targetHandle: 'left'
-  }
-];
+const initialEdges = [];  // Empty initial edges array
 
 const GraphVisualizerContent = ({ onBack }) => {
   const reactFlowInstance = useReactFlow();

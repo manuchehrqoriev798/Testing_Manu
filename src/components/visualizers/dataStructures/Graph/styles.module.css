@@ -420,3 +420,27 @@
 .addButton:hover {
   background-color: #45a049;
 }
+
+.addButtonIndicator {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transform-origin: center;
+}
+
+.addButtonIndicator:hover {
+  background-color: #ff0000;
+  transform: scale(1.1) !important;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
