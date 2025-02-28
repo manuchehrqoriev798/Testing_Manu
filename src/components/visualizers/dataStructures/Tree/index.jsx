@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactFlow, { 
   ReactFlowProvider,
   Controls, 
   Background,
-  useReactFlow,
   applyNodeChanges,
   applyEdgeChanges,
   Handle,
@@ -12,7 +11,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import styles from './styles.module.css';
 
-// Define CustomNode component
+// CustomNode remains unchanged
 const CustomNode = React.memo(({ data, id }) => {
   const [hoveredNode, setHoveredNode] = useState(false);
 
@@ -63,36 +62,32 @@ const CustomNode = React.memo(({ data, id }) => {
 
 CustomNode.displayName = 'CustomNode';
 
-// Define nodeTypes outside of the component
-const nodeTypes = {
-  custom: CustomNode
-};
+const nodeTypes = { custom: CustomNode };
 
-// Main component content
 const TreeVisualizerContent = ({ onActivate, onBack }) => {
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const LEVEL_HEIGHT = 120;
-  const NODE_WIDTH = 50;
+  const NODE_WIDTH = 150;
 
   const getSubtreeWidth = useCallback((nodeId, level) => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return 0;
     
-    const spacing = Math.pow(2, level) * NODE_WIDTH * 1.5;
+    // Base spacing increases with level
+    const baseSpacing = Math.pow(2, level) * NODE_WIDTH;
     
     if (!node.data.leftChildId && !node.data.rightChildId) {
-      return spacing;
+      return baseSpacing;
     }
     
     const leftWidth = node.data.leftChildId ? getSubtreeWidth(node.data.leftChildId, level + 1) : 0;
     const rightWidth = node.data.rightChildId ? getSubtreeWidth(node.data.rightChildId, level + 1) : 0;
     
-    return Math.max(spacing, leftWidth + rightWidth);
+    return Math.max(baseSpacing, leftWidth + rightWidth);
   }, [nodes]);
 
-  const calculateNodePosition = useCallback((parentNode, isLeft) => {
-    const level = parentNode.position.y / LEVEL_HEIGHT + 1;
+  const calculateNodePosition = useCallback((parentNode, isLeft, level) => {
     const subtreeWidth = getSubtreeWidth(parentNode.id, level);
     const horizontalOffset = subtreeWidth / 2;
     
@@ -100,6 +95,54 @@ const TreeVisualizerContent = ({ onActivate, onBack }) => {
       x: parentNode.position.x + (isLeft ? -horizontalOffset : horizontalOffset),
       y: parentNode.position.y + LEVEL_HEIGHT
     };
+  }, [getSubtreeWidth]);
+
+  const updateAffectedNodePositions = useCallback((nodeList, startNodeId) => {
+    const getPathToRoot = (nodeId, path = []) => {
+      const node = nodeList.find(n => n.id === nodeId);
+      if (!node) return path;
+      path.push(node.id);
+      if (node.data.parentId) {
+        return getPathToRoot(node.data.parentId, path);
+      }
+      return path;
+    };
+
+    const affectedNodeIds = getPathToRoot(startNodeId);
+    let updatedNodes = [...nodeList];
+
+    const updateSubtree = (nodeId, x, level) => {
+      const currentNode = updatedNodes.find(n => n.id === nodeId);
+      if (!currentNode) return;
+
+      if (affectedNodeIds.includes(nodeId)) {
+        currentNode.position = { x, y: level * LEVEL_HEIGHT };
+      }
+
+      const subtreeWidth = getSubtreeWidth(nodeId, level);
+      const spacing = subtreeWidth / 2;
+
+      if (currentNode.data.leftChildId) {
+        updateSubtree(
+          currentNode.data.leftChildId,
+          x - spacing,
+          level + 1
+        );
+      }
+      if (currentNode.data.rightChildId) {
+        updateSubtree(
+          currentNode.data.rightChildId,
+          x + spacing,
+          level + 1
+        );
+      }
+    };
+
+    const highestAffectedNode = nodeList.find(n => n.id === affectedNodeIds[affectedNodeIds.length - 1]);
+    const level = Math.floor(highestAffectedNode.position.y / LEVEL_HEIGHT);
+    updateSubtree(highestAffectedNode.id, highestAffectedNode.position.x, level);
+
+    return updatedNodes;
   }, [getSubtreeWidth]);
 
   const onNodesChange = useCallback((changes) => {
@@ -130,7 +173,15 @@ const TreeVisualizerContent = ({ onActivate, onBack }) => {
       if (!isLeft && parent.data.rightChildId) return currentNodes;
 
       const newNodeId = `node-${currentNodes.length + 1}`;
-      const position = calculateNodePosition(parent, isLeft);
+      const parentLevel = Math.floor(parent.position.y / LEVEL_HEIGHT);
+      
+      // Calculate horizontal spacing based on parent's position and level
+      const spacing = Math.pow(2, parentLevel) * NODE_WIDTH;
+      
+      const position = {
+        x: parent.position.x + (isLeft ? -spacing : spacing),
+        y: parent.position.y + LEVEL_HEIGHT
+      };
 
       const newNode = {
         id: newNodeId,
@@ -171,9 +222,8 @@ const TreeVisualizerContent = ({ onActivate, onBack }) => {
 
       return updatedNodes;
     });
-  }, [calculateNodePosition]);
+  }, []);
 
-  // Initialize root node
   useEffect(() => {
     if (nodes.length === 0) {
       const rootNode = {
@@ -193,7 +243,7 @@ const TreeVisualizerContent = ({ onActivate, onBack }) => {
       setNodes([rootNode]);
       if (onActivate) onActivate();
     }
-  }, []);
+  }, [addChild, handleNodeLabelChange, onActivate]);
 
   return (
     <div className={styles.visualizer}>
@@ -211,6 +261,8 @@ const TreeVisualizerContent = ({ onActivate, onBack }) => {
             onEdgesChange={onEdgesChange}
             nodeTypes={nodeTypes}
             fitView
+            minZoom={0.1}
+            maxZoom={4}
           >
             <Background />
             <Controls />
@@ -221,7 +273,6 @@ const TreeVisualizerContent = ({ onActivate, onBack }) => {
   );
 };
 
-// Wrap with ReactFlowProvider
 const TreeVisualizer = (props) => {
   return (
     <ReactFlowProvider>
@@ -230,4 +281,4 @@ const TreeVisualizer = (props) => {
   );
 };
 
-export default TreeVisualizer; 
+export default TreeVisualizer;
