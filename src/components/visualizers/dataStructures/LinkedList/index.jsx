@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import ReactFlow, { 
   ReactFlowProvider, 
   Controls, 
@@ -14,28 +14,14 @@ import styles from './styles.module.css';
 // Custom Node Component with Handles - defined outside component
 const CustomNode = ({ data, id }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [leftButtonHovered, setLeftButtonHovered] = useState(false);
-  const [rightButtonHovered, setRightButtonHovered] = useState(false);
   const nodeRef = useRef(null);
 
-  // Add a buffer when leaving so we have time to click buttons
   const handleMouseEnter = () => setIsHovered(true);
-  
-  // Don't immediately remove the hover when the mouse leaves
-  const handleMouseLeave = (e) => {
-    // Check if we're moving toward one of our buttons
-    const nodeRect = nodeRef.current.getBoundingClientRect();
-    
-    // Don't turn off hover if we're moving toward the buttons
-    if (e.clientX < nodeRect.left - 40 || e.clientX > nodeRect.right + 40) {
-      // Only deactivate hover after a short delay
-      setTimeout(() => {
-        setIsHovered(false);
-      }, 100);
-    } else {
-      // Immediately deactivate if not moving toward buttons
+
+  const handleMouseLeave = () => {
+    setTimeout(() => {
       setIsHovered(false);
-    }
+    }, 100);
   };
 
   return (
@@ -45,12 +31,8 @@ const CustomNode = ({ data, id }) => {
       onMouseLeave={handleMouseLeave}
       className={styles.nodeWrapper}
     >
-      {/* Target handle's position changes when left add button is hovered */}
-      <Handle 
-        type="target" 
-        position={Position.Left} 
-        className={`${leftButtonHovered ? styles.handleOffset : ''}`}
-      />
+      {/* Static left handle */}
+      <Handle type="target" position={Position.Left} />
 
       <div className={`${styles.node} ${isHovered ? styles.hovered : ''}`}>
         <input
@@ -64,16 +46,31 @@ const CustomNode = ({ data, id }) => {
           className={styles.nodeInput}
           placeholder="?"
         />
+        
+        <button
+          className={`${styles.addButton} ${styles.addButtonLeft}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            data.onAddNode(id, 'before');
+          }}
+        >
+          +
+        </button>
+
+        <button
+          className={`${styles.addButton} ${styles.addButtonRight}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            data.onAddNode(id, 'after');
+          }}
+        >
+          +
+        </button>
       </div>
-      
-      {/* Source handle's position changes when right add button is hovered */}
-      <Handle 
-        type="source" 
-        position={Position.Right} 
-        className={`${rightButtonHovered ? styles.handleOffset : ''}`}
-      />
-      
-      {/* Make buttons always visible but conditional styling */}
+
+      {/* Static right handle */}
+      <Handle type="source" position={Position.Right} />
+
       <div className={styles.nodeControls}>
         {isHovered && (
           <button
@@ -86,36 +83,6 @@ const CustomNode = ({ data, id }) => {
             ×
           </button>
         )}
-        
-        <button
-          className={`${styles.addButton} ${styles.addButtonLeft} ${isHovered ? styles.visible : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            data.onAddNode(id, 'before');
-          }}
-          onMouseEnter={() => {
-            setLeftButtonHovered(true);
-            setIsHovered(true); // Keep hovered state active
-          }}
-          onMouseLeave={() => setLeftButtonHovered(false)}
-        >
-          +
-        </button>
-        
-        <button
-          className={`${styles.addButton} ${styles.addButtonRight} ${isHovered ? styles.visible : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            data.onAddNode(id, 'after');
-          }}
-          onMouseEnter={() => {
-            setRightButtonHovered(true);
-            setIsHovered(true); // Keep hovered state active
-          }}
-          onMouseLeave={() => setRightButtonHovered(false)}
-        >
-          +
-        </button>
       </div>
     </div>
   );

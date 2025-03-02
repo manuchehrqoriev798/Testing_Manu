@@ -47,26 +47,15 @@
   background-color: #2196F3;
   border: 1px solid #fff;
   opacity: 0; /* Keep them invisible but functional */
-  transition: transform 0.3s ease;
   z-index: 1;
 }
 
-/* Better positioning for handles to ensure they're at edge of circles */
 .nodeWrapper :global(.react-flow__handle-left) {
   left: -4px;
 }
 
 .nodeWrapper :global(.react-flow__handle-right) {
   right: -4px;
-}
-
-/* Handle offset when button is hovered */
-.nodeWrapper :global(.react-flow__handle-left.handleOffset) {
-  transform: translateX(-20px);
-}
-
-.nodeWrapper :global(.react-flow__handle-right.handleOffset) {
-  transform: translateX(20px);
 }
 
 .node {
@@ -118,25 +107,6 @@
   color: #999;
 }
 
-.addButtonIndicator {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  background-color: #2196F3;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 16px;
-  pointer-events: none;
-  opacity: 0;
-}
-
-.fadeIn {
-  opacity: 0.7;
-}
-
 .deleteBtn {
   position: absolute;
   top: -10px;
@@ -178,6 +148,13 @@
   z-index: 25; /* Ensure it's above everything */
   border: none;
   outline: none;
+  opacity: 0; /* Hide by default */
+  visibility: hidden; /* Hide by default */
+}
+
+.hovered .addButton {
+  opacity: 1; /* Show when parent is hovered */
+  visibility: visible; /* Show when parent is hovered */
 }
 
 .addButton:hover {
