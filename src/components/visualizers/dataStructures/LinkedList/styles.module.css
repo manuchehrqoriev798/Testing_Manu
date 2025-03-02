@@ -34,17 +34,39 @@
 
 .nodeWrapper {
   position: relative;
-  padding: 30px 50px;
-  margin: -30px -50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
 }
 
-/* Add these styles to hide the handles but keep their functionality */
+/* Style handles for better connections */
 .nodeWrapper :global(.react-flow__handle) {
-  opacity: 0;
-  width: 15px;
-  height: 15px;
-  background-color: transparent;
-  border: none;
+  width: 8px;
+  height: 8px;
+  background-color: #2196F3;
+  border: 1px solid #fff;
+  opacity: 0; /* Keep them invisible but functional */
+  transition: transform 0.3s ease;
+  z-index: 1;
+}
+
+/* Better positioning for handles to ensure they're at edge of circles */
+.nodeWrapper :global(.react-flow__handle-left) {
+  left: -4px;
+}
+
+.nodeWrapper :global(.react-flow__handle-right) {
+  right: -4px;
+}
+
+/* Handle offset when button is hovered */
+.nodeWrapper :global(.react-flow__handle-left.handleOffset) {
+  transform: translateX(-20px);
+}
+
+.nodeWrapper :global(.react-flow__handle-right.handleOffset) {
+  transform: translateX(20px);
 }
 
 .node {
@@ -58,11 +80,27 @@
   align-items: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 5;
 }
 
 .hovered {
   transform: scale(1.1);
   box-shadow: 0 0 10px rgba(33, 150, 243, 0.3);
+}
+
+/* Container for node controls to prevent interfering with connections */
+.nodeControls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20; /* Higher z-index to ensure buttons are clickable */
+}
+
+.nodeControls button {
+  pointer-events: auto; /* Make buttons clickable */
 }
 
 .nodeInput {
@@ -101,7 +139,7 @@
 
 .deleteBtn {
   position: absolute;
-  top: 10px;
+  top: -10px;
   left: 50%;
   transform: translateX(-50%);
   width: 20px;
@@ -116,7 +154,7 @@
   cursor: pointer;
   font-size: 16px;
   transition: transform 0.2s ease, background-color 0.2s ease;
-  z-index: 10;
+  z-index: 25; /* Ensure it's above everything */
 }
 
 .deleteBtn:hover {
@@ -136,22 +174,35 @@
   align-items: center;
   font-size: 16px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  z-index: 10;
+  transition: all 0.2s ease;
+  z-index: 25; /* Ensure it's above everything */
+  border: none;
+  outline: none;
 }
 
 .addButton:hover {
   background-color: #0d8bf2;
+  transform: scale(1.1);
 }
 
 .addButtonLeft {
-  left: 10px;
+  left: -35px;
   top: 50%;
   transform: translateY(-50%);
 }
 
 .addButtonRight {
-  right: 10px;
+  right: -35px;
   top: 50%;
   transform: translateY(-50%);
+}
+
+/* Ensure edge connections are visible */
+:global(.react-flow__edge) {
+  z-index: 5;
+}
+
+:global(.react-flow__edge-path) {
+  stroke-width: 2;
+  stroke: #2196F3;
 }
