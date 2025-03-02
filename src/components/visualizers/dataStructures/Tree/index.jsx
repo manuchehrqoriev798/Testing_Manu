@@ -207,6 +207,17 @@ const TreeVisualizerContent = ({ onActivate, onBack }) => {
     }
   }, [addChild, handleNodeLabelChange, onActivate]);
 
+  // Add layout settings for smoother transitions
+  const layoutSettings = {
+    type: 'dagre',
+    rankdir: 'TB',
+    align: 'UL',
+    ranksep: 80,
+    nodesep: 60,
+    animate: true,
+    animationDuration: 500,
+  };
+
   return (
     <div className={styles.visualizer}>
       <div className={styles.container}>
@@ -225,6 +236,17 @@ const TreeVisualizerContent = ({ onActivate, onBack }) => {
             fitView
             minZoom={0.1}
             maxZoom={4}
+            defaultEdgeOptions={{
+              type: 'smoothstep',
+              style: { strokeWidth: 2 },
+              animated: true
+            }}
+            layouting={layoutSettings}
+            fitViewOptions={{
+              duration: 500,
+              padding: 0.2
+            }}
+            proOptions={{ hideAttribution: true }}
           >
             <Background />
             <Controls />

@@ -27,14 +27,14 @@
 
 .nodeWrapper {
   position: relative;
-  padding: 15px;
+  padding: 8px;
 }
 
 .node {
-  width: 36px;
-  height: 36px;
+  width: 18px;
+  height: 18px;
   background: white;
-  border: 2px solid #2c3e50;
+  border: 1px solid #2c3e50;
   border-radius: 50%;
   display: flex;
   justify-content: center;
@@ -42,7 +42,7 @@
   cursor: pointer;
   user-select: none;
   z-index: 1;
-  transition: all 0.3s ease;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .root {
@@ -65,8 +65,8 @@
 
 .addBtn {
   position: absolute;
-  width: 20px;
-  height: 20px;
+  width: 10px;
+  height: 10px;
   background-color: #27ae60;
   color: white;
   border: none;
@@ -75,7 +75,7 @@
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 8px;
   z-index: 2;
   transition: all 0.2s ease;
 }
@@ -86,13 +86,15 @@
 }
 
 .addBtnLeft {
-  left: -5px;
-  bottom: 10px;
+  left: -4px;
+  bottom: -4px;
+  transform: rotate(-45deg);
 }
 
 .addBtnRight {
-  right: -5px;
-  bottom: 10px;
+  right: -4px;
+  bottom: -4px;
+  transform: rotate(45deg);
 }
 
 .levelIndicator {
@@ -141,12 +143,12 @@
 }
 
 .nodeInput {
-  width: 24px;
-  height: 24px;
+  width: 12px;
+  height: 12px;
   border: none;
   background: transparent;
   text-align: center;
-  font-size: 12px;
+  font-size: 8px;
   outline: none;
   padding: 0;
 }
@@ -194,8 +196,20 @@
   border-radius: 0;
   background: transparent;
   border: none;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.5s ease-in-out;
 }
 
+.react-flow__edge {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.react-flow__edge-path {
+  stroke-width: 2;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Adjust the edge connection points and add smooth transitions */
 .react-flow__handle {
   width: 0;
   height: 0;
@@ -203,4 +217,39 @@
   min-height: 0;
   background: transparent;
   border: none;
+  margin-top: 0;
+  margin-bottom: 0;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.react-flow__handle-top {
+  top: 9px;
+}
+
+.react-flow__handle-bottom {
+  bottom: 9px;
+}
+
+/* Smooth viewport transitions */
+.react-flow__viewport {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Ensure smooth transitions for node positions */
+.react-flow__node-custom {
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 } 

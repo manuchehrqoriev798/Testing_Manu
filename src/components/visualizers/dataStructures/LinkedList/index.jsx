@@ -1,299 +1,204 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import ReactFlow, { 
+  ReactFlowProvider, 
+  Controls, 
+  Background, 
+  useReactFlow, 
+  MarkerType,
+  Handle,
+  Position
+} from 'reactflow';
+import 'reactflow/dist/style.css';
 import styles from './styles.module.css';
 
+// Custom Node Component with Handles - defined outside component
+const CustomNode = ({ data, id }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const nodeRef = useRef(null);
+
+  const handleMouseEnter = () => setIsHovered(true);
+  const handleMouseLeave = () => setIsHovered(false);
+
+  return (
+    <div
+      ref={nodeRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={styles.nodeWrapper}
+    >
+      {/* Define target handle on the left */}
+      <Handle type="target" position={Position.Left} />
+      <div className={`${styles.node} ${isHovered ? styles.hovered : ''}`}>
+        <input
+          type="text"
+          value={data.label}
+          onChange={(e) => {
+            e.stopPropagation();
+            data.onLabelChange(id, e.target.value);
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className={styles.nodeInput}
+          placeholder="?"
+        />
+      </div>
+      {/* Define source handle on the right */}
+      <Handle type="source" position={Position.Right} />
+      {isHovered && (
+        <>
+          <button
+            className={styles.deleteBtn}
+            onClick={(e) => {
+              e.stopPropagation();
+              data.onDeleteNode(id);
+            }}
+          >
+            ×
+          </button>
+          <button
+            className={`${styles.addButton} ${styles.addButtonLeft}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              data.onAddNode(id, 'before');
+            }}
+          >
+            +
+          </button>
+          <button
+            className={`${styles.addButton} ${styles.addButtonRight}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              data.onAddNode(id, 'after');
+            }}
+          >
+            +
+          </button>
+        </>
+      )}
+    </div>
+  );
+};
+
+// Define nodeTypes outside of components
+const nodeTypes = { custom: CustomNode };
+
 const LinkedListVisualizer = ({ onBack }) => {
-  const [nodes, setNodes] = useState([]);
-  const [hoveredNode, setHoveredNode] = useState(null);
-  const [scale, setScale] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const listAreaRef = useRef(null);
-  const [deletingNodes, setDeletingNodes] = useState(new Set());
-  const [newNodeId, setNewNodeId] = useState(null);
-  const [rightClickMenu, setRightClickMenu] = useState({ nodeId: null, position: { x: 0, y: 0 } });
-  const [editingNode, setEditingNode] = useState(null);
+  const [nodeOrder, setNodeOrder] = useState(['node-1']);
+  const [nodeData, setNodeData] = useState({ 'node-1': { label: '' } });
+  const reactFlowInstance = useReactFlow();
+  const [initialLayoutDone, setInitialLayoutDone] = useState(false);
 
-  // Initialize with first node
-  useEffect(() => {
-    const initialNode = {
-      id: `node-${Date.now()}`,
-      label: '',
-      position: {
-        x: window.innerWidth / 2 - 20,
-        y: window.innerHeight / 2 - 20,
+  // Compute nodes based on nodeOrder
+  const nodes = useMemo(() => {
+    return nodeOrder.map((id, index) => ({
+      id,
+      type: 'custom',
+      position: { x: 150 + index * 200, y: 200 },
+      draggable: true,
+      data: {
+        label: nodeData[id]?.label || '',
+        onAddNode: (sourceId, direction) => {
+          const sourceIndex = nodeOrder.findIndex((nid) => nid === sourceId);
+          const newNodeId = `node-${Date.now()}`;
+          let newOrder;
+
+          if (direction === 'before') {
+            newOrder = [
+              ...nodeOrder.slice(0, sourceIndex),
+              newNodeId,
+              ...nodeOrder.slice(sourceIndex),
+            ];
+          } else {
+            newOrder = [
+              ...nodeOrder.slice(0, sourceIndex + 1),
+              newNodeId,
+              ...nodeOrder.slice(sourceIndex + 1),
+            ];
+          }
+
+          setNodeOrder(newOrder);
+          setNodeData((prev) => ({ ...prev, [newNodeId]: { label: '' } }));
+        },
+        onDeleteNode: (id) => {
+          setNodeOrder((prev) => prev.filter((nid) => nid !== id));
+          setNodeData((prev) => {
+            const { [id]: _, ...rest } = prev;
+            return rest;
+          });
+        },
+        onLabelChange: (id, newLabel) => {
+          setNodeData((prev) => ({ ...prev, [id]: { label: newLabel } }));
+        },
       },
-    };
-    setNodes([initialNode]);
-  }, []);
+    }));
+  }, [nodeOrder, nodeData]);
 
-  const handleAddNode = (sourceNodeId, direction) => {
-    const sourceNodeIndex = nodes.findIndex(node => node.id === sourceNodeId);
-    const sourceNode = nodes[sourceNodeIndex];
-    
-    // Calculate new node position
-    const newPosition = {
-      x: sourceNode.position.x + (direction === 'right' ? 100 : -100),
-      y: sourceNode.position.y
-    };
-    
-    // Shift existing nodes to make space
-    const newNodes = nodes.map(node => {
-      if (direction === 'right' && node.position.x > sourceNode.position.x) {
-        // Shift nodes to the right by 100 units
-        return {
-          ...node,
-          position: {
-            ...node.position,
-            x: node.position.x + 100
-          }
-        };
-      } else if (direction === 'left' && node.position.x < sourceNode.position.x) {
-        // Shift nodes to the left by 100 units
-        return {
-          ...node,
-          position: {
-            ...node.position,
-            x: node.position.x - 100
-          }
-        };
-      }
-      return node;
-    });
-    
-    const newNode = {
-      id: `node-${Date.now()}`,
-      label: '',
-      position: newPosition
-    };
-    
-    const insertIndex = direction === 'right' ? sourceNodeIndex + 1 : sourceNodeIndex;
-    newNodes.splice(insertIndex, 0, newNode);
-    
-    setNodes(newNodes);
-    setNewNodeId(newNode.id);
-    setTimeout(() => setNewNodeId(null), 500);
-  };
+  // Compute edges based on nodeOrder
+  const edges = useMemo(() => {
+    return nodeOrder.slice(0, -1).map((id, index) => ({
+      id: `e${id}-${nodeOrder[index + 1]}`,
+      source: id,
+      target: nodeOrder[index + 1],
+      type: 'default',
+      animated: false,
+      style: { stroke: '#2196F3', strokeWidth: 3 },
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 20,
+        height: 20,
+        color: '#2196F3',
+      },
+    }));
+  }, [nodeOrder]);
 
-  const handleDeleteNode = (nodeId) => {
-    setDeletingNodes(prev => new Set([...prev, nodeId]));
-
-    setTimeout(() => {
-      setNodes(nodes.filter(node => node.id !== nodeId));
-      setHoveredNode(null);
-      setDeletingNodes(prev => {
-        const updated = new Set(prev);
-        updated.delete(nodeId);
-        return updated;
-      });
-    }, 300);
-  };
-
-  const handleLabelChange = (nodeId, newValue) => {
-    setNodes(nodes.map(node =>
-      node.id === nodeId ? { ...node, label: newValue } : node
-    ));
-  };
-
-  const handleZoomIn = () => {
-    setScale(prevScale => Math.min(4, prevScale + 0.1));
-  };
-
-  const handleZoomOut = () => {
-    setScale(prevScale => Math.max(0.1, prevScale - 0.1));
-  };
-
-  const handleCanvasDragStart = (e) => {
-    setIsDraggingCanvas(true);
-    setDragStart({
-      x: e.clientX - offset.x,
-      y: e.clientY - offset.y
-    });
-  };
-
-  const handleCanvasDrag = (e) => {
-    if (isDraggingCanvas) {
-      setOffset({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y
-      });
+  // Set initial layout once
+  useEffect(() => {
+    if (!initialLayoutDone && reactFlowInstance) {
+      reactFlowInstance.setViewport({ x: 0, y: 0, zoom: 1 });
+      setInitialLayoutDone(true);
     }
-  };
+  }, [reactFlowInstance, initialLayoutDone]);
 
-  const handleCanvasDragEnd = () => {
-    setIsDraggingCanvas(false);
-  };
-
-  const handleContextMenu = (e, nodeId) => {
-    e.preventDefault();
-    setRightClickMenu({
-      nodeId,
-      position: { x: e.clientX, y: e.clientY }
-    });
-  };
-
-  const handleClickOutside = () => {
-    setRightClickMenu({ nodeId: null, position: { x: 0, y: 0 } });
-  };
-
-  const handleSwitchNodes = (sourceIndex, targetIndex) => {
-    const newNodes = [...nodes];
-    [newNodes[sourceIndex], newNodes[targetIndex]] = [newNodes[targetIndex], newNodes[sourceIndex]];
-    setNodes(newNodes);
-    setRightClickMenu({ nodeId: null, position: { x: 0, y: 0 } });
-  };
-
-  const handleWheel = (e) => {
-    e.preventDefault();
-    setScale(prevScale => Math.max(0.1, prevScale - e.deltaY * 0.001));
-  };
+  // Memoize default edge options
+  const defaultEdgeOptions = useMemo(() => ({
+    type: 'default',
+    style: { stroke: '#2196F3', strokeWidth: 3 },
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: '#2196F3',
+    },
+  }), []);
 
   return (
     <div className={styles.visualizer}>
-      <div className={styles.container}>
-        <div 
-          ref={listAreaRef}
-          className={styles.area}
-          onMouseDown={handleCanvasDragStart}
-          onMouseMove={handleCanvasDrag}
-          onMouseUp={handleCanvasDragEnd}
-          onWheel={handleWheel}
-          onClick={handleClickOutside}
+      <div className={styles.controls}>
+        <button onClick={onBack} className={styles.backBtn}>
+          Back
+        </button>
+      </div>
+      <div className={styles.graphContainer} style={{ width: '100%', height: '600px' }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          fitViewOptions={{ padding: 0.2 }}
+          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          minZoom={0.5}
+          maxZoom={1.5}
+          defaultEdgeOptions={defaultEdgeOptions}
         >
-          <div 
-            className={styles.content}
-            style={{
-              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`
-            }}
-          >
-            {/* Draw connection arrows first so they appear behind nodes */}
-            {nodes.map((node, index) => {
-              if (index < nodes.length - 1) {
-                const nextNode = nodes[index + 1];
-                return (
-                  <div
-                    key={`connection-${node.id}`}
-                    className={styles.arrow}
-                    style={{
-                      left: node.position.x + 30,
-                      top: node.position.y + 30,
-                      width: '100px',
-                    }}
-                  >
-                    <div className={styles.arrowLine}></div>
-                    <div className={styles.arrowHead}></div>
-                  </div>
-                );
-              }
-              return null;
-            })}
-
-            {/* Draw nodes on top of arrows */}
-            {nodes.map((node, index) => (
-              <div
-                key={node.id}
-                className={`${styles.node} ${hoveredNode === node.id ? styles.hovered : ''} 
-                           ${deletingNodes.has(node.id) ? styles.delete : ''} 
-                           ${newNodeId === node.id ? styles.appear : ''}`}
-                style={{
-                  left: node.position?.x || 0,
-                  top: node.position?.y || 0,
-                }}
-                onMouseEnter={() => setHoveredNode(node.id)}
-                onMouseLeave={() => setHoveredNode(null)}
-                onContextMenu={(e) => handleContextMenu(e, node.id)}
-              >
-                <button 
-                  className={`${styles.btn} ${styles.leftBtn}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddNode(node.id, 'left');
-                  }}
-                >
-                  +
-                </button>
-                <div className={styles.nodeContent}>
-                  {editingNode === node.id ? (
-                    <input
-                      type="text"
-                      value={node.label}
-                      onChange={(e) => handleLabelChange(node.id, e.target.value)}
-                      onBlur={() => setEditingNode(null)}
-                      autoFocus
-                      className={styles.nodeInput}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <div 
-                      onClick={() => setEditingNode(node.id)}
-                      className={styles.nodeLabel}
-                    >
-                      {node.label || '?'}
-                    </div>
-                  )}
-                  {hoveredNode === node.id && (
-                    <button 
-                      className={styles.deleteBtn}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteNode(node.id);
-                      }}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-                <button 
-                  className={`${styles.btn} ${styles.rightBtn}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddNode(node.id, 'right');
-                  }}
-                >
-                  +
-                </button>
-              </div>
-            ))}
-            {rightClickMenu.nodeId && (
-              <div 
-                className={styles.menu}
-                style={{
-                  left: rightClickMenu.position.x,
-                  top: rightClickMenu.position.y
-                }}
-              >
-                {nodes.findIndex(n => n.id === rightClickMenu.nodeId) > 0 && (
-                  <button
-                    onClick={() => {
-                      const currentIndex = nodes.findIndex(n => n.id === rightClickMenu.nodeId);
-                      handleSwitchNodes(currentIndex, currentIndex - 1);
-                    }}
-                  >
-                    Switch ({nodes[nodes.findIndex(n => n.id === rightClickMenu.nodeId)].label || '?'}) with left node ({nodes[nodes.findIndex(n => n.id === rightClickMenu.nodeId) - 1].label || '?'})
-                  </button>
-                )}
-                {nodes.findIndex(n => n.id === rightClickMenu.nodeId) < nodes.length - 1 && (
-                  <button
-                    onClick={() => {
-                      const currentIndex = nodes.findIndex(n => n.id === rightClickMenu.nodeId);
-                      handleSwitchNodes(currentIndex, currentIndex + 1);
-                    }}
-                  >
-                    Switch ({nodes[nodes.findIndex(n => n.id === rightClickMenu.nodeId)].label || '?'}) with right node ({nodes[nodes.findIndex(n => n.id === rightClickMenu.nodeId) + 1].label || '?'})
-                  </button>
-                )}
-              </div>
-            )}
-            <div className={styles.controls}>
-              <button className={styles.btn} onClick={handleZoomIn}>+</button>
-              <div className={styles.level}>{Math.round(scale * 100)}%</div>
-              <button className={styles.btn} onClick={handleZoomOut}>−</button>
-            </div>
-          </div>
-        </div>
+          <Background />
+          <Controls />
+        </ReactFlow>
       </div>
     </div>
   );
 };
 
-export default LinkedListVisualizer;
+// Create a wrapped component to avoid recreating ReactFlowProvider on each render
+const WrappedLinkedListVisualizer = ({ onBack }) => (
+  <ReactFlowProvider>
+    <LinkedListVisualizer onBack={onBack} />
+  </ReactFlowProvider>
+);
+
+export default WrappedLinkedListVisualizer;
