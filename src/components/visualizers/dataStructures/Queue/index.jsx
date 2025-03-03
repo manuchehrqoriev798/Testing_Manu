@@ -1,139 +1,247 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import ReactFlow, { ReactFlowProvider, Controls, Background, applyNodeChanges } from 'reactflow';
+import 'reactflow/dist/style.css';
 import styles from './styles.module.css';
 
-const QueueVisualizer = ({ onBack }) => {
-  const [queue, setQueue] = useState([]);
+// Constants for queue positioning
+const QUEUE_X_START = 100;  // Starting X-position of the queue
+const QUEUE_Y = 300;        // Y-position of the queue
+const WIDTH = 120;          // Width of each queue element plus spacing
+const THRESHOLD = 100;      // Distance threshold for dequeuing via drag
+
+// Custom QueueNode component
+const QueueNode = ({ data }) => {
+  const { label, isHighlighted } = data;
+  
+  return (
+    <div
+      style={{
+        width: 100,
+        height: 40,
+        background: isHighlighted ? '#e3f2fd' : '#eee',
+        border: isHighlighted ? '2px solid #2196F3' : '1px solid #333',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: data.isFront ? 'grab' : 'default',
+        transition: 'all 0.3s ease',
+        boxShadow: isHighlighted ? '0 0 10px rgba(33, 150, 243, 0.7)' : 'none',
+      }}
+    >
+      {label}
+    </div>
+  );
+};
+
+// Main content component
+const QueueVisualizerContent = ({ onBack }) => {
+  const [nodes, setNodes] = useState([]);
+  const [queueOrder, setQueueOrder] = useState([]);
   const [inputValue, setInputValue] = useState('');
-  const [error, setError] = useState('');
+  const [isDraggingFront, setIsDraggingFront] = useState(false);
+  const [highlightedNodeId, setHighlightedNodeId] = useState(null);
+  const [message, setMessage] = useState(null);
   const MAX_QUEUE_SIZE = 10;
 
-  const enqueue = (value) => {
-    if (queue.length >= MAX_QUEUE_SIZE) {
-      setError('Queue is full! Cannot enqueue more elements.');
+  // Enqueue a new value
+  const enqueue = useCallback((value) => {
+    if (!value.trim()) return;
+    
+    if (queueOrder.length >= MAX_QUEUE_SIZE) {
+      showMessage("Queue is full! Cannot enqueue more elements.");
       return;
     }
-
-    const newElement = {
-      id: Date.now(),
-      value: value,
-      isNew: true
+    
+    const newNodeId = `queue-${Date.now()}`;
+    const newNode = {
+      id: newNodeId,
+      type: 'queueNode',
+      data: { label: value },
+      position: { x: QUEUE_X_START + queueOrder.length * WIDTH, y: QUEUE_Y },
     };
-
-    setQueue(prevQueue => [...prevQueue, newElement]);
+    
+    setNodes((nds) => [...nds, newNode]);
+    setQueueOrder((order) => [...order, newNodeId]);
     setInputValue('');
-    setError('');
+  }, [queueOrder.length]);
 
-    // Remove the 'isNew' flag after animation
-    setTimeout(() => {
-      setQueue(prevQueue =>
-        prevQueue.map(item =>
-          item.id === newElement.id ? { ...item, isNew: false } : item
-        )
-      );
-    }, 300);
-  };
-
-  const dequeue = () => {
-    if (queue.length === 0) {
-      setError('Queue is empty! Cannot dequeue.');
+  // Dequeue the front element
+  const dequeue = useCallback(() => {
+    if (queueOrder.length === 0) {
+      showMessage("Queue is empty! Cannot dequeue.");
       return;
     }
+    
+    const frontId = queueOrder[0];
+    setNodes((nds) => nds.filter((node) => node.id !== frontId));
+    setQueueOrder((order) => order.slice(1));
+  }, [queueOrder]);
 
-    // Mark first element as removing
-    setQueue(prevQueue =>
-      prevQueue.map((item, index) =>
-        index === 0 ? { ...item, isRemoving: true } : item
-      )
-    );
-
-    // Remove the element after animation
+  // Show a message for a short time
+  const showMessage = useCallback((text) => {
+    setMessage(text);
     setTimeout(() => {
-      setQueue(prevQueue => prevQueue.slice(1));
-      setError('');
-    }, 300);
-  };
-
-  const peek = () => {
-    if (queue.length === 0) {
-      setError('Queue is empty! Cannot peek.');
+      setMessage(null);
+    }, 2000);
+  }, []);
+  
+  // Peek at the front element
+  const peekQueue = useCallback(() => {
+    if (queueOrder.length === 0) {
+      showMessage("Queue is empty - nothing to peek!");
       return;
     }
-
-    // Mark first element as peeking
-    setQueue(prevQueue =>
-      prevQueue.map((item, index) =>
-        index === 0 ? { ...item, isPeeking: true } : item
-      )
-    );
-
-    // Remove peeking effect after animation
+    
+    const frontId = queueOrder[0];
+    setHighlightedNodeId(frontId);
+    showMessage(`Peek: ${nodes.find(n => n.id === frontId)?.data.label}`);
+    
+    // Clear highlight after 1.5 seconds
     setTimeout(() => {
-      setQueue(prevQueue =>
-        prevQueue.map(item =>
-          item.isPeeking ? { ...item, isPeeking: false } : item
-        )
-      );
-    }, 1000);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (inputValue.trim()) {
-      enqueue(inputValue.trim());
+      setHighlightedNodeId(null);
+    }, 1500);
+  }, [queueOrder, nodes, showMessage]);
+  
+  // Clear the entire queue
+  const clearQueue = useCallback(() => {
+    if (queueOrder.length === 0) {
+      showMessage("Queue is already empty!");
+      return;
     }
-  };
+    
+    setNodes([]);
+    setQueueOrder([]);
+    showMessage("Queue cleared!");
+  }, [queueOrder.length, showMessage]);
+  
+  // Check if the queue is empty
+  const isEmptyQueue = useCallback(() => {
+    const isEmpty = queueOrder.length === 0;
+    showMessage(isEmpty ? "Queue is empty" : "Queue is not empty");
+  }, [queueOrder.length, showMessage]);
+  
+  // Get the size of the queue
+  const getQueueSize = useCallback(() => {
+    showMessage(`Queue size: ${queueOrder.length}`);
+  }, [queueOrder.length, showMessage]);
+
+  // Handle node position changes during dragging
+  const onNodesChange = useCallback((changes) => {
+    setNodes((nds) => applyNodeChanges(changes, nds));
+  }, []);
+
+  // Start dragging the front node
+  const onNodeDragStart = useCallback((event, node) => {
+    if (node.id === queueOrder[0]) {
+      setIsDraggingFront(true);
+    }
+  }, [queueOrder]);
+
+  // Handle drag stop to decide removal or snap-back
+  const onNodeDragStop = useCallback((event, node) => {
+    if (node.id === queueOrder[0]) {
+      setIsDraggingFront(false);
+      const dy = node.position.y - QUEUE_Y;
+      if (Math.abs(dy) > THRESHOLD) {
+        dequeue();
+      } else {
+        setNodes((nds) =>
+          nds.map((n) => {
+            if (n.id === node.id) {
+              return { ...n, position: { x: QUEUE_X_START, y: QUEUE_Y } };
+            }
+            return n;
+          })
+        );
+      }
+    }
+  }, [queueOrder, dequeue]);
+
+  // Map queue order to ReactFlow nodes
+  const flowNodes = queueOrder.map((nodeId, index) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) return null;
+    
+    const isFront = index === 0;
+    const isHighlighted = nodeId === highlightedNodeId;
+    const position = isFront && isDraggingFront 
+      ? node.position 
+      : { x: QUEUE_X_START + index * WIDTH, y: QUEUE_Y };
+    
+    return {
+      ...node,
+      position,
+      draggable: isFront,
+      data: {
+        ...node.data,
+        isFront,
+        isHighlighted,
+      },
+    };
+  }).filter(Boolean);
 
   return (
     <div className={styles.visualizer}>
+      {/* Message display */}
+      {message && <div className={styles.message}>{message}</div>}
+      
+      {/* Controls for queue interaction */}
       <div className={styles.controls}>
         <button onClick={onBack} className={styles.btn}>
           Back
         </button>
-        <form onSubmit={handleSubmit} className={styles.inputForm}>
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Enter value"
-            className={styles.input}
-          />
-          <button type="submit" className={styles.btn}>
-            Enqueue
-          </button>
-        </form>
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          placeholder="Enter value"
+          className={styles.input}
+        />
+        <button onClick={() => enqueue(inputValue)} className={styles.btn}>
+          Enqueue
+        </button>
         <button onClick={dequeue} className={styles.btn}>
           Dequeue
         </button>
-        <button onClick={peek} className={styles.btn}>
+        <button onClick={peekQueue} className={`${styles.btn} ${styles.peekBtn}`}>
           Peek
+        </button>
+        <button onClick={clearQueue} className={`${styles.btn} ${styles.clearBtn}`}>
+          Clear
+        </button>
+        <button onClick={isEmptyQueue} className={`${styles.btn} ${styles.isEmptyBtn}`}>
+          isEmpty
+        </button>
+        <button onClick={getQueueSize} className={`${styles.btn} ${styles.sizeBtn}`}>
+          Size
         </button>
       </div>
 
-      {error && <div className={styles.error}>{error}</div>}
-
-      <div className={styles.container}>
-        <div className={styles.labels}>
-          <div className={styles.label}>Front</div>
-          <div className={styles.label}>Rear</div>
-        </div>
-        <div className={styles.elements}>
-          {queue.map((item, index) => (
-            <div
-              key={item.id}
-              className={`${styles.element} ${item.isNew ? styles.new : ''} 
-                ${item.isRemoving ? styles.removing : ''} 
-                ${item.isPeeking ? styles.peeking : ''}`}
-            >
-              <span className={styles.value}>{item.value}</span>
-              <span className={styles.index}>{index}</span>
-            </div>
-          ))}
-          {queue.length === 0 && (
-            <div className={styles.empty}>Queue is empty</div>
-          )}
-        </div>
+      {/* ReactFlow component */}
+      <div style={{ width: '100vw', height: '100vh' }}>
+        <ReactFlow
+          nodes={flowNodes}
+          edges={[]}
+          nodeTypes={{ queueNode: QueueNode }}
+          onNodesChange={onNodesChange}
+          onNodeDragStart={onNodeDragStart}
+          onNodeDragStop={onNodeDragStop}
+          fitView
+        >
+          <Background />
+          <Controls />
+        </ReactFlow>
       </div>
     </div>
+  );
+};
+
+// Wrap in ReactFlowProvider
+const QueueVisualizer = (props) => {
+  return (
+    <ReactFlowProvider>
+      <QueueVisualizerContent {...props} />
+    </ReactFlowProvider>
   );
 };
 

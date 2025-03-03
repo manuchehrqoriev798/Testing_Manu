@@ -5,6 +5,7 @@ import { ReactFlowProvider } from 'reactflow'
 // Import visualizers from correct paths
 import StackVisualizer from './components/visualizers/dataStructures/Stack'
 import QueueVisualizer from './components/visualizers/dataStructures/Queue'
+import DequeVisualizer from './components/visualizers/dataStructures/Deque'
 import LinkedListVisualizer from './components/visualizers/dataStructures/LinkedList'
 import TreeVisualizer from './components/visualizers/dataStructures/Tree'
 import GraphVisualizer from './components/visualizers/dataStructures/Graph'
@@ -27,6 +28,7 @@ function App() {
             <div className="visualizer-buttons">
               <button onClick={() => setActiveVisualizer('stack')}>Stack</button>
               <button onClick={() => setActiveVisualizer('queue')}>Queue</button>
+              <button onClick={() => setActiveVisualizer('deque')}>Deque</button>
               <button onClick={() => setActiveVisualizer('linkedlist')}>Linked List</button>
               <button onClick={() => setActiveVisualizer('tree')}>Tree</button>
               <button onClick={() => setActiveVisualizer('graph')}>Graph</button>
@@ -37,6 +39,7 @@ function App() {
         
         {activeVisualizer === 'stack' && <StackVisualizer onBack={handleBack} />}
         {activeVisualizer === 'queue' && <QueueVisualizer onBack={handleBack} />}
+        {activeVisualizer === 'deque' && <DequeVisualizer onBack={handleBack} />}
         {activeVisualizer === 'linkedlist' && <LinkedListVisualizer onBack={handleBack} />}
         {activeVisualizer === 'tree' && <TreeVisualizer onBack={handleBack} />}
         {activeVisualizer === 'graph' && <GraphVisualizer onBack={handleBack} />}
