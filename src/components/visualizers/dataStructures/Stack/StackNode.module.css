@@ -1,0 +1,371 @@
+.visualizer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Global controls at left side */
+.globalControls {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 20;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.backBtn {
+  padding: 8px 16px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.backBtn:hover {
+  background: #5a6268;
+}
+
+.addStackBtn {
+  padding: 8px 16px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.addStackBtn:hover {
+  background: #3e8e41;
+}
+
+/* Container for all stacks */
+.stacksContainer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px;
+  overflow: auto;
+}
+
+/* Global ReactFlow container */
+.flowContainer {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+/* Wrapper for individual stack controls */
+.stackWrapper {
+  position: absolute;
+  width: 280px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  padding: 15px;
+  right: 20px;
+  transition: all 0.3s ease;
+}
+
+.stackWrapper:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Delete stack button */
+.deleteStackBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  background: linear-gradient(to right, #dc3545, #b21f2d);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.deleteStackBtn:hover {
+  background: linear-gradient(to right, #c82333, #9c1723);
+  transform: scale(1.1);
+}
+
+/* Stack node styling */
+.stackNode {
+  width: 140px; /* Standard width for all stack parts */
+  height: 40px;
+  background: #fff;
+  border: 1px solid #333;
+  color: #000;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 2px; /* Space between stack elements, reduced for tighter stack */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center center;
+  z-index: 10;
+  position: relative;
+  text-align: center; /* Ensure text is centered within the node */
+}
+
+.stackNode.highlighted {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  box-shadow: 0 0 10px rgba(255, 193, 7, 0.7);
+}
+
+/* Stack base styling */
+.stackBase {
+  width: 140px; /* Standard width, same as stackNode */
+  height: 12px;
+  background: linear-gradient(90deg, #2c3e50, #4a6491);
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  z-index: 5;
+  margin-top: 2px; /* Space above base, reduced for tighter layout */
+}
+
+.stackBase:active {
+  cursor: grabbing;
+  transform: scale(1.02);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.stackBase.selectedStackBase {
+  box-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+  border: 2px solid #f39c12;
+}
+
+.stackLabelNode {
+  width: 140px; /* Standard width, same as stackNode and stackBase */
+  position: relative; /* Changed from absolute to relative */
+  top: auto; /* Reset top positioning */
+  left: auto; /* Reset left positioning */
+  transform: none; /* Remove translateX */
+  margin-top: 10px; /* Increased space below base to 10px - always applied */
+  font-size: 14px;
+  font-weight: 500;
+  color: #2c3e50;
+  text-align: center;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  display: block; /* Ensure it takes full width */
+}
+
+.stackLabelNode:hover {
+  color: #f39c12;
+  transform: scale(1.05); /* Slight scale on hover, remove translateX */
+}
+
+.stackBase.selectedStackBase .stackLabelNode {
+  color: #f39c12;
+  font-weight: 600;
+}
+
+.stackLabelNode:active {
+  cursor: grabbing;
+}
+
+.stackControls {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  width: 250px;
+}
+
+.stackHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-weight: bold;
+}
+
+.inputGroup {
+  margin-bottom: 16px;
+}
+
+.input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.buttonGroup {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background: #3498db;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.btn:hover {
+  background: #2980b9;
+}
+
+.deleteStackBtn {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.deleteStackBtn:hover {
+  color: #c0392b;
+}
+
+/* Additional utility classes */
+.peekBtn { background: #2ecc71; }
+.peekBtn:hover { background: #27ae60; }
+
+.clearBtn { background: #e74c3c; }
+.clearBtn:hover { background: #c0392b; }
+
+.isEmptyBtn { background: #f1c40f; }
+.isEmptyBtn:hover { background: #f39c12; }
+
+.sizeBtn { background: #9b59b6; }
+.sizeBtn:hover { background: #8e44ad; }
+
+/* Stack-specific colors */
+.stackNode[data-stack="stack-1"] { background: #f8d7da; border-color: #dc3545; }
+.stackNode[data-stack="stack-2"] { background: #d1ecf1; border-color: #17a2b8; }
+.stackNode[data-stack="stack-3"] { background: #d4edda; border-color: #28a745; }
+.stackNode[data-stack="stack-4"] { background: #fff3cd; border-color: #ffc107; }
+.stackNode[data-stack="stack-5"] { background: #e2e3e5; border-color: #6c757d; }
+.stackNode[data-stack="stack-6"] { background: #cce5ff; border-color: #007bff; }
+.stackNode[data-stack="stack-7"] { background: #f8f9fa; border-color: #343a40; }
+.stackNode[data-stack="stack-8"] { background: #d6d8d9; border-color: #6c757d; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .stacksContainer {
+    overflow-x: auto;
+  }
+
+  .stackWrapper {
+    position: relative;
+    top: auto;
+    left: auto;
+    margin: 20px;
+    width: 250px;
+  }
+
+  .globalControls {
+    width: calc(100% - 40px);
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+/* Add hover effect for top element */
+.stackNode[data-is-top="true"]:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Add animation for pop threshold indicator */
+@keyframes popIndicator {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+.popIndicator {
+  animation: popIndicator 1.5s infinite;
+}
+
+/* Optional: Add styles for drag state */
+.stackBase:active {
+  cursor: grabbing;
+}
+
+.stackLabelNode:active {
+  cursor: grabbing;
+}
+
+.stackGroup {
+  position: absolute;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+/* Optional: Add hover effect for better interactivity */
+.stackBase:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure smooth movement during drag */
+[data-dragging="true"] {
+  transition: none; /* Disable transition during active drag for more responsive feel */
+}
+
+/* Add smooth movement for ReactFlow nodes */
+:global(.react-flow__node) {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Optimize performance */
+.stackBase,
+.stackNode,
+.stackLabelNode {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
