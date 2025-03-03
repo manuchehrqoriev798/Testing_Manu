@@ -1,0 +1,209 @@
+.visualizer {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.controls {
+  padding: 15px;
+  background: #f9f9f9;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  z-index: 10;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  align-items: center;
+}
+
+.flowContainer {
+  width: 100%;
+  height: 100%;
+  margin-top: 150px;
+}
+
+.btn {
+  padding: 8px 16px;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.btn:hover {
+  background-color: #2b6cb0;
+}
+
+.btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 150px;
+}
+
+.inputForm, .searchForm {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.message {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  z-index: 1000;
+  font-size: 14px;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.skipListInfo {
+  position: absolute;
+  top: 70px;
+  left: 15px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+  width: calc(100% - 30px);
+  max-width: 800px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 5;
+}
+
+.skipListInfo h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.skipListInfo p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #555;
+}
+
+.legend {
+  margin-top: 10px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.legend span {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border-radius: 3px;
+}
+
+.regularNode {
+  background-color: #e0e0e0;
+  border: 1px solid #bbb;
+}
+
+.highlightedNode {
+  background-color: #e3f2fd;
+  border: 1px solid #2196F3;
+}
+
+.deletingNode {
+  background-color: #ffebee;
+  border: 1px solid #f44336;
+}
+
+.skipNode {
+  padding: 8px;
+  border-radius: 4px;
+  background-color: white;
+  border: 2px solid #aaa;
+  text-align: center;
+  font-weight: 600;
+  min-width: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.skipNode.highlighted {
+  border-color: #2196F3;
+  background-color: #e3f2fd;
+  box-shadow: 0 0 10px rgba(33,150,243,0.5);
+}
+
+.skipNode.deleting {
+  border-color: #f44336;
+  background-color: #ffebee;
+  box-shadow: 0 0 10px rgba(244,67,54,0.5);
+}
+
+.nodeLabel {
+  font-size: 16px;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-bottom: 25px;
+  }
+  
+  .inputForm, .searchForm {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .buttonGroup {
+    flex-wrap: wrap;
+  }
+  
+  .flowContainer {
+    margin-top: 250px;
+  }
+  
+  .skipListInfo {
+    top: 210px;
+  }
+} 

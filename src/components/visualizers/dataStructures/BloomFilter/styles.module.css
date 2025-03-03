@@ -1,0 +1,295 @@
+.visualizer {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  background-color: #f9f9f9;
+}
+
+.controls {
+  padding: 15px;
+  background: white;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  z-index: 10;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  align-items: center;
+}
+
+.settings {
+  position: absolute;
+  top: 70px;
+  left: 15px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  display: flex;
+  gap: 20px;
+  z-index: 10;
+}
+
+.settingGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.settingGroup label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 5px;
+}
+
+.flowContainer {
+  width: 100%;
+  height: 100%;
+  margin-top: 130px;
+}
+
+.btn {
+  padding: 8px 16px;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.btn:hover:not(:disabled) {
+  background-color: #2b6cb0;
+}
+
+.btn.active {
+  background-color: #0f4c91;
+  font-weight: bold;
+}
+
+.btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 150px;
+}
+
+.inputForm {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.message {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  z-index: 1000;
+  font-size: 14px;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.infoPanel {
+  position: absolute;
+  top: 130px;
+  right: 15px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  max-width: 300px;
+  z-index: 10;
+}
+
+.infoPanel h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #333;
+  font-size: 16px;
+}
+
+.infoPanel p {
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.stats {
+  background-color: #f5f5f5;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.stats div {
+  margin-bottom: 5px;
+}
+
+.itemsList {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+.item {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: inline-block;
+}
+
+/* Bit node styling */
+.bitNode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  position: relative;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.setBit {
+  background-color: #e3f2fd;
+  border: 2px solid #1976d2;
+}
+
+.unsetBit {
+  background-color: #f5f5f5;
+  border: 2px solid #bdbdbd;
+}
+
+.nodeIndex {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #757575;
+  background-color: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.nodeValue {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+}
+
+.highlightRing {
+  position: absolute;
+  width: 74px;
+  height: 74px;
+  border-radius: 37px;
+  opacity: 0.4;
+  z-index: -1;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.1); opacity: 0.2; }
+  100% { transform: scale(1); opacity: 0.4; }
+}
+
+/* Hash function node styling */
+.hashNode {
+  background-color: white;
+  border: 2px solid #E0E0E0;
+  border-radius: 6px;
+  padding: 10px;
+  min-width: 180px;
+  transition: all 0.3s ease;
+}
+
+.hashTitle {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.hashFormula {
+  font-family: monospace;
+  font-size: 12px;
+  color: #666;
+  background: #f5f5f5;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-bottom: 25px;
+  }
+  
+  .inputForm {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .settings {
+    top: 135px;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .flowContainer {
+    margin-top: 220px;
+  }
+  
+  .infoPanel {
+    position: relative;
+    top: auto;
+    right: auto;
+    max-width: none;
+    margin: 15px;
+  }
+} 
