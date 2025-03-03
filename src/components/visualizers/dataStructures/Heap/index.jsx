@@ -1,67 +1,71 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styles from './styles.module.css';
-import { ReactFlowProvider } from 'reactflow';
+import ReactFlow, { 
+  ReactFlowProvider, 
+  Controls, 
+  Background, 
+  applyNodeChanges, 
+  applyEdgeChanges,
+  Handle,
+  Position
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+
+// Custom Heap Node component
+const HeapNode = ({ data }) => {
+  return (
+    <div
+      className={`${styles.node} ${data.state ? styles[data.state] : ''} ${
+        data.isAnimating ? styles.comparing : ''
+      }`}
+    >
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+      {data.label}
+      {data.isRemovable && (
+        <button
+          className={styles.deleteBtn}
+          onClick={data.onDelete}
+          title="Delete node"
+        >
+          ×
+        </button>
+      )}
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+    </div>
+  );
+};
 
 const HeapVisualizer = ({ onBack }) => {
+  // Use useRef to keep nodeTypes consistent across renders
+  const nodeTypes = useRef({
+    heapNode: HeapNode
+  }).current;
+  
   const [nodes, setNodes] = useState([]);
+  const [edges, setEdges] = useState([]);
   const [heapType, setHeapType] = useState('max'); // 'max' or 'min'
-  const [inputValue, setInputValue] = useState(''); // New state for input value
-  const treeAreaRef = useRef(null);
-  const [scale, setScale] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const LEVEL_HEIGHT = 120;
-  const [animatingNodes, setAnimatingNodes] = useState(new Set());
+  const [inputValue, setInputValue] = useState(''); // State for input value
   const [isAnimating, setIsAnimating] = useState(false);
-
-  // Add new state variables for array visualization
+  const [animatingNodes, setAnimatingNodes] = useState(new Set());
+  
+  // Array representation
   const [arrayInputValue, setArrayInputValue] = useState('');
   const [activeIndex, setActiveIndex] = useState(null);
   const [comparingIndices, setComparingIndices] = useState([]);
   const [swappingIndices, setSwappingIndices] = useState([]);
 
-  const heapify = (array, i, heapSize) => {
-    const left = 2 * i + 1;
-    const right = 2 * i + 2;
-    let largest = i;
-
-    if (heapType === 'max') {
-      if (left < heapSize && parseInt(array[left].label) > parseInt(array[largest].label)) {
-        largest = left;
-      }
-      if (right < heapSize && parseInt(array[right].label) > parseInt(array[largest].label)) {
-        largest = right;
-      }
-    } else {
-      if (left < heapSize && parseInt(array[left].label) < parseInt(array[largest].label)) {
-        largest = left;
-      }
-      if (right < heapSize && parseInt(array[right].label) < parseInt(array[largest].label)) {
-        largest = right;
-      }
-    }
-
-    if (largest !== i) {
-      // Swap values
-      const temp = array[i].label;
-      array[i].label = array[largest].label;
-      array[largest].label = temp;
-      
-      heapify(array, largest, heapSize);
-    }
-  };
-
+  // Convert heap node data to ReactFlow format
   const calculateNodePosition = (index) => {
     const level = Math.floor(Math.log2(index + 1));
     const position = index + 1 - Math.pow(2, level);
     const totalNodesInLevel = Math.pow(2, level);
     const levelWidth = 800;
     const x = (position + 0.5) * (levelWidth / totalNodesInLevel) - 25;
-    const y = level * 100;
+    const y = level * 120;
     return { x, y };
   };
 
+  // Sleep function for animations
   const sleep = (ms) => new Promise(resolve => {
     try {
       setTimeout(resolve, ms);
@@ -70,51 +74,206 @@ const HeapVisualizer = ({ onBack }) => {
     }
   });
 
+  // Handle ReactFlow node changes
+  const onNodesChange = useCallback(
+    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    []
+  );
+
+  // Handle ReactFlow edge changes
+  const onEdgesChange = useCallback(
+    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    []
+  );
+
+  // Create edges between nodes based on parent-child relationships
+  const updateEdges = useCallback((heapArray) => {
+    const newEdges = [];
+    
+    heapArray.forEach((_, index) => {
+      const leftChildIndex = 2 * index + 1;
+      const rightChildIndex = 2 * index + 2;
+      
+      if (leftChildIndex < heapArray.length) {
+        newEdges.push({
+          id: `edge-${index}-${leftChildIndex}`,
+          source: `node-${index}`,
+          target: `node-${leftChildIndex}`,
+          type: 'smoothstep',
+          animated: false,
+        });
+      }
+      
+      if (rightChildIndex < heapArray.length) {
+        newEdges.push({
+          id: `edge-${index}-${rightChildIndex}`,
+          source: `node-${index}`,
+          target: `node-${rightChildIndex}`,
+          type: 'smoothstep',
+          animated: false,
+        });
+      }
+    });
+    
+    setEdges(newEdges);
+  }, []);
+
+  // Compare nodes based on heap type
+  const compareNodes = (a, b) => {
+    const numA = parseInt(a);
+    const numB = parseInt(b);
+    if (heapType === 'max') {
+      return numA > numB;
+    }
+    return numA < numB;
+  };
+
+  // Insert a new node with animation
   const insertNode = async (value) => {
     try {
       if (isAnimating) return;
       setIsAnimating(true);
 
-      const newNodes = [...nodes];
+      // Create nodes array for the ReactFlow representation
+      const existingHeapData = nodes.map(node => ({ label: node.data.label }));
+      const newHeapData = [...existingHeapData, { label: parseInt(value) }];
+      
+      // Create the new node
+      const newNodeId = `node-${existingHeapData.length}`;
+      const newPosition = calculateNodePosition(existingHeapData.length);
+      
+      // Add the new node to ReactFlow nodes
       const newNode = {
-        id: Date.now().toString(),
-        label: parseInt(value),
-        position: calculateNodePosition(newNodes.length),
-        state: 'inserting'
+        id: newNodeId,
+        type: 'heapNode',
+        position: newPosition,
+        data: { 
+          label: parseInt(value),
+          state: 'inserting',
+          isAnimating: false,
+          isRemovable: true,
+          onDelete: () => deleteNode(existingHeapData.length)
+        }
       };
-
-      newNodes.push(newNode);
-      setNodes([...newNodes]);
+      
+      // Create a completely new array of nodes to avoid reference issues
+      const updatedNodes = [...nodes, newNode];
+      setNodes(updatedNodes);
+      
+      // Wait for the node to be added to the DOM
+      await sleep(300);
+      
+      // Update edges after the node is added
+      updateEdges(newHeapData);
+      
+      // Wait for the edges to be rendered
       await sleep(500);
 
-      let currentIndex = newNodes.length - 1;
+      // Now start the heapify process with the updated nodes
+      let currentIndex = newHeapData.length - 1;
+      let currentNodes = [...updatedNodes];
+      
       while (currentIndex > 0) {
         const parentIndex = Math.floor((currentIndex - 1) / 2);
-        if (compareNodes(newNodes[currentIndex].label, newNodes[parentIndex].label)) {
+        
+        if (compareNodes(newHeapData[currentIndex].label, newHeapData[parentIndex].label)) {
           setAnimatingNodes(new Set([currentIndex, parentIndex]));
-          newNodes[currentIndex].state = 'comparing';
-          newNodes[parentIndex].state = 'comparing';
-          setNodes([...newNodes]);
+          
+          // Update node states for animation - create a fresh copy
+          const animatingNodes = currentNodes.map((node, idx) => {
+            if (idx === currentIndex || idx === parentIndex) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  state: 'comparing',
+                  isAnimating: true
+                }
+              };
+            }
+            return {...node}; // Return a new object for each node
+          });
+          
+          setNodes(animatingNodes);
+          currentNodes = animatingNodes;
+          
           await sleep(500);
 
-          const temp = newNodes[currentIndex].label;
-          newNodes[currentIndex].label = newNodes[parentIndex].label;
-          newNodes[parentIndex].label = temp;
-          newNodes[currentIndex].state = 'swapping';
-          newNodes[parentIndex].state = 'swapping';
-          setNodes([...newNodes]);
+          // Swap values
+          const temp = newHeapData[currentIndex].label;
+          newHeapData[currentIndex].label = newHeapData[parentIndex].label;
+          newHeapData[parentIndex].label = temp;
+          
+          // Update nodes after swap - create a fresh copy again
+          const swappedNodes = currentNodes.map((node, idx) => {
+            if (idx === currentIndex) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  label: newHeapData[currentIndex].label,
+                  state: 'swapping'
+                }
+              };
+            }
+            if (idx === parentIndex) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  label: newHeapData[parentIndex].label,
+                  state: 'swapping'
+                }
+              };
+            }
+            return {...node}; // Return a new object for each node
+          });
+          
+          setNodes(swappedNodes);
+          currentNodes = swappedNodes;
+          
           await sleep(500);
 
-          newNodes[currentIndex].state = '';
-          newNodes[parentIndex].state = '';
+          // Reset animation states - create a fresh copy again
+          const resetNodes = currentNodes.map((node, idx) => {
+            if (idx === currentIndex || idx === parentIndex) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  state: '',
+                  isAnimating: false
+                }
+              };
+            }
+            return {...node}; // Return a new object for each node
+          });
+          
+          setNodes(resetNodes);
+          currentNodes = resetNodes;
+          
           currentIndex = parentIndex;
         } else {
           break;
         }
       }
 
-      newNodes[currentIndex].state = '';
-      setNodes([...newNodes]);
+      // Final cleanup - create a fresh copy one last time
+      const finalNodes = currentNodes.map((node) => {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            state: '',
+            isAnimating: false,
+            isRemovable: true,
+            onDelete: () => deleteNode(parseInt(node.id.split('-')[1]))
+          }
+        };
+      });
+      
+      setNodes(finalNodes);
+      updateEdges(newHeapData);
       setAnimatingNodes(new Set());
       setIsAnimating(false);
     } catch (error) {
@@ -124,45 +283,7 @@ const HeapVisualizer = ({ onBack }) => {
     }
   };
 
-  const deleteRoot = () => {
-    if (nodes.length === 0) return;
-
-    const newNodes = [...nodes];
-    newNodes[0].label = newNodes[nodes.length - 1].label;
-    newNodes.pop();
-    
-    heapify(newNodes, 0, newNodes.length);
-    setNodes(newNodes);
-  };
-
-  const rebuildHeap = async () => {
-    if (nodes.length <= 1) return;
-    
-    try {
-      setIsAnimating(true);
-      const newNodes = [...nodes];
-      
-      // Start from the last non-leaf node
-      for (let i = Math.floor(nodes.length / 2) - 1; i >= 0; i--) {
-        await heapifyWithAnimation(newNodes, i);
-      }
-
-      // Recalculate positions
-      newNodes.forEach((node, index) => {
-        node.position = calculateNodePosition(index);
-        node.state = '';
-      });
-      
-      setNodes([...newNodes]);
-      setAnimatingNodes(new Set());
-      setIsAnimating(false);
-    } catch (error) {
-      console.error('Rebuild heap error:', error);
-      setIsAnimating(false);
-      setAnimatingNodes(new Set());
-    }
-  };
-
+  // Heapify with animation
   const heapifyWithAnimation = async (heap, index) => {
     try {
       const length = heap.length;
@@ -173,43 +294,111 @@ const HeapVisualizer = ({ onBack }) => {
       // Compare with left child
       if (left < length) {
         setAnimatingNodes(new Set([largest, left]));
-        heap[largest].state = 'comparing';
-        heap[left].state = 'comparing';
-        setNodes([...heap]);
+        
+        // Update node states for animation
+        const updatedNodes = nodes.map((node, idx) => {
+          if (idx === largest || idx === left) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                state: 'comparing',
+                isAnimating: true
+              }
+            };
+          }
+          return node;
+        });
+        
+        setNodes(updatedNodes);
         await sleep(500);
 
         if (compareNodes(heap[left].label, heap[largest].label)) {
           largest = left;
         }
 
-        heap[largest].state = '';
-        heap[left].state = '';
-        setNodes([...heap]);
+        // Reset animation
+        const resetNodes = updatedNodes.map((node, idx) => {
+          if (idx === largest || idx === left) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                state: '',
+                isAnimating: false
+              }
+            };
+          }
+          return node;
+        });
+        
+        setNodes(resetNodes);
       }
 
       // Compare with right child
       if (right < length) {
         setAnimatingNodes(new Set([largest, right]));
-        heap[largest].state = 'comparing';
-        heap[right].state = 'comparing';
-        setNodes([...heap]);
+        
+        // Update node states for animation
+        const updatedNodes = nodes.map((node, idx) => {
+          if (idx === largest || idx === right) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                state: 'comparing',
+                isAnimating: true
+              }
+            };
+          }
+          return node;
+        });
+        
+        setNodes(updatedNodes);
         await sleep(500);
 
         if (compareNodes(heap[right].label, heap[largest].label)) {
           largest = right;
         }
 
-        heap[largest].state = '';
-        heap[right].state = '';
-        setNodes([...heap]);
+        // Reset animation
+        const resetNodes = updatedNodes.map((node, idx) => {
+          if (idx === largest || idx === right) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                state: '',
+                isAnimating: false
+              }
+            };
+          }
+          return node;
+        });
+        
+        setNodes(resetNodes);
       }
 
       if (largest !== index) {
         // Swap animation
         setAnimatingNodes(new Set([index, largest]));
-        heap[index].state = 'swapping';
-        heap[largest].state = 'swapping';
-        setNodes([...heap]);
+        
+        // Update node states for swap animation
+        const swapNodes = nodes.map((node, idx) => {
+          if (idx === index || idx === largest) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                state: 'swapping',
+                isAnimating: true
+              }
+            };
+          }
+          return node;
+        });
+        
+        setNodes(swapNodes);
         await sleep(500);
 
         // Perform swap
@@ -217,9 +406,34 @@ const HeapVisualizer = ({ onBack }) => {
         heap[index].label = heap[largest].label;
         heap[largest].label = temp;
 
-        heap[index].state = '';
-        heap[largest].state = '';
-        setNodes([...heap]);
+        // Update nodes with new values
+        const updatedNodes = swapNodes.map((node, idx) => {
+          if (idx === index) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                label: heap[index].label,
+                state: '',
+                isAnimating: false
+              }
+            };
+          }
+          if (idx === largest) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                label: heap[largest].label,
+                state: '',
+                isAnimating: false
+              }
+            };
+          }
+          return node;
+        });
+        
+        setNodes(updatedNodes);
 
         // Recursively heapify the affected subtree
         await heapifyWithAnimation(heap, largest);
@@ -231,6 +445,130 @@ const HeapVisualizer = ({ onBack }) => {
     }
   };
 
+  // Delete a node
+  const deleteNode = async (nodeIndex) => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+
+    try {
+      // Get heap data from nodes
+      const heapData = nodes.map(node => ({ label: node.data.label }));
+      
+      // Highlight the node being deleted
+      setAnimatingNodes(new Set([nodeIndex]));
+      
+      const updatedNodes = [...nodes];
+      updatedNodes[nodeIndex] = {
+        ...updatedNodes[nodeIndex],
+        data: {
+          ...updatedNodes[nodeIndex].data,
+          state: 'deleting',
+          isAnimating: true
+        }
+      };
+      
+      setNodes(updatedNodes);
+      await sleep(500);
+
+      // If it's a leaf node, simply remove it
+      if (nodeIndex === heapData.length - 1) {
+        heapData.pop();
+        setNodes(nodes.filter((_, idx) => idx !== nodeIndex));
+      } else {
+        // Replace with the last node
+        heapData[nodeIndex].label = heapData[heapData.length - 1].label;
+        heapData.pop();
+        
+        // Update node with new value
+        const replacedNodes = [...nodes.slice(0, -1)];
+        replacedNodes[nodeIndex] = {
+          ...replacedNodes[nodeIndex],
+          data: {
+            ...replacedNodes[nodeIndex].data,
+            label: heapData[nodeIndex].label,
+            state: 'inserting',
+            isAnimating: true
+          }
+        };
+        
+        setNodes(replacedNodes);
+        await sleep(500);
+        
+        // Heapify down from the replaced node
+        await heapifyWithAnimation(heapData, nodeIndex);
+      }
+
+      // Convert heap data back to ReactFlow nodes
+      const finalNodes = heapData.map((item, idx) => {
+        const position = calculateNodePosition(idx);
+        return {
+          id: `node-${idx}`,
+          type: 'heapNode',
+          position,
+          data: {
+            label: item.label,
+            state: '',
+            isAnimating: false,
+            isRemovable: true,
+            onDelete: () => deleteNode(idx)
+          }
+        };
+      });
+      
+      setNodes(finalNodes);
+      updateEdges(heapData);
+      setAnimatingNodes(new Set());
+      setIsAnimating(false);
+    } catch (error) {
+      console.error('Delete node error:', error);
+      setIsAnimating(false);
+      setAnimatingNodes(new Set());
+    }
+  };
+
+  // Rebuild heap when type changes
+  const rebuildHeap = async () => {
+    if (nodes.length <= 1) return;
+    
+    try {
+      setIsAnimating(true);
+      // Extract heap data from nodes
+      const heapData = nodes.map(node => ({ label: node.data.label }));
+      
+      // Start from the last non-leaf node
+      for (let i = Math.floor(heapData.length / 2) - 1; i >= 0; i--) {
+        await heapifyWithAnimation(heapData, i);
+      }
+
+      // Update nodes with final data
+      const finalNodes = heapData.map((item, idx) => {
+        const position = calculateNodePosition(idx);
+        return {
+          id: `node-${idx}`,
+          type: 'heapNode',
+          position,
+          data: {
+            label: item.label,
+            state: '',
+            isAnimating: false,
+            isRemovable: true,
+            onDelete: () => deleteNode(idx)
+          }
+        };
+      });
+      
+      setNodes(finalNodes);
+      updateEdges(heapData);
+      setAnimatingNodes(new Set());
+      setIsAnimating(false);
+    } catch (error) {
+      console.error('Rebuild heap error:', error);
+      setIsAnimating(false);
+      setAnimatingNodes(new Set());
+    }
+  };
+
+  // Switch heap type
   const handleHeapTypeSwitch = async () => {
     if (isAnimating) return;
     const newType = heapType === 'max' ? 'min' : 'max';
@@ -238,34 +576,7 @@ const HeapVisualizer = ({ onBack }) => {
     await rebuildHeap();
   };
 
-  const compareNodes = (a, b) => {
-    const numA = parseInt(a);
-    const numB = parseInt(b);
-    if (heapType === 'max') {
-      return numA > numB;
-    }
-    return numA < numB;
-  };
-
-  // Canvas drag handlers
-  const handleCanvasDragStart = (e) => {
-    setIsDraggingCanvas(true);
-    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
-  };
-
-  const handleCanvasDrag = (e) => {
-    if (isDraggingCanvas) {
-      setOffset({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y
-      });
-    }
-  };
-
-  const handleCanvasDragEnd = () => {
-    setIsDraggingCanvas(false);
-  };
-
+  // Handle form submission for inserting new nodes
   const handleInputSubmit = (e) => {
     e.preventDefault();
     const value = parseInt(inputValue);
@@ -278,54 +589,15 @@ const HeapVisualizer = ({ onBack }) => {
     setInputValue(''); // Clear input after insertion
   };
 
-  const deleteNode = async (nodeIndex) => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-
-    const newNodes = [...nodes];
-    
-    // Highlight the node being deleted
-    setAnimatingNodes(new Set([nodeIndex]));
-    newNodes[nodeIndex].state = 'deleting';
-    setNodes([...newNodes]);
-    await sleep(500);
-
-    // If it's a leaf node, simply remove it
-    if (nodeIndex === newNodes.length - 1) {
-      newNodes.pop();
-    } else {
-      // Replace with the last node
-      newNodes[nodeIndex].label = newNodes[newNodes.length - 1].label;
-      newNodes[nodeIndex].state = 'inserting';
-      setNodes([...newNodes]);
-      await sleep(500);
-      
-      // Remove the last node
-      newNodes.pop();
-      
-      // Heapify down from the replaced node
-      await heapifyWithAnimation(newNodes, nodeIndex);
+  // Update edges when nodes change
+  useEffect(() => {
+    if (nodes.length > 0) {
+      const heapData = nodes.map(node => ({ label: node.data.label }));
+      updateEdges(heapData);
     }
+  }, [nodes, updateEdges]);
 
-    // Recalculate positions
-    newNodes.forEach((node, index) => {
-      node.position = calculateNodePosition(index);
-      node.state = '';
-    });
-
-    setNodes([...newNodes]);
-    setAnimatingNodes(new Set());
-    setIsAnimating(false);
-  };
-
-  // Add array input handler
-  const handleArrayInputChange = (e) => {
-    // Allow only numbers and commas
-    const value = e.target.value.replace(/[^0-9,]/g, '');
-    setArrayInputValue(value);
-  };
-
-  // Add useEffect to rebuild heap when type changes
+  // Rebuild heap when type changes
   useEffect(() => {
     rebuildHeap();
   }, [heapType]);
@@ -362,54 +634,25 @@ const HeapVisualizer = ({ onBack }) => {
             </button>
           </form>
         </div>
-        <div className={styles.heapArea} ref={treeAreaRef}>
-          {nodes.map((node, index) => {
-            const parentIndex = Math.floor((index - 1) / 2);
-            if (index > 0) {
-              const parent = nodes[parentIndex];
-              return (
-                <React.Fragment key={`connection-${node.id}`}>
-                  <div
-                    className={styles.line}
-                    style={{
-                      left: parent.position.x + 25,
-                      top: parent.position.y + 25,
-                      width: Math.sqrt(
-                        Math.pow(node.position.x - parent.position.x, 2) +
-                        Math.pow(node.position.y - parent.position.y, 2)
-                      ),
-                      transform: `rotate(${Math.atan2(
-                        node.position.y - parent.position.y,
-                        node.position.x - parent.position.x
-                      )}rad)`
-                    }}
-                  />
-                </React.Fragment>
-              );
-            }
-            return null;
-          })}
-          {nodes.map((node, index) => (
-            <div
-              key={node.id}
-              className={`${styles.node} ${node.state} ${
-                animatingNodes.has(index) ? styles.comparing : ''
-              }`}
-              style={{
-                left: node.position.x,
-                top: node.position.y
-              }}
-            >
-              {node.label}
-              <button
-                className={styles.btn}
-                onClick={() => deleteNode(index)}
-                title="Delete node"
-              >
-                ×
-              </button>
-            </div>
-          ))}
+        
+        <div className={styles.flowContainer}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            nodeTypes={nodeTypes}
+            fitView
+            minZoom={0.1}
+            maxZoom={4}
+            defaultEdgeOptions={{
+              type: 'smoothstep',
+              animated: false
+            }}
+          >
+            <Background />
+            <Controls />
+          </ReactFlow>
         </div>
 
         {/* Array Visualization */}
@@ -422,10 +665,10 @@ const HeapVisualizer = ({ onBack }) => {
                   <div 
                     key={`array-${node.id}`}
                     className={`${styles.arrayNode} ${
-                      node.state ? styles[node.state] : ''
-                    } ${animatingNodes.has(index) ? styles.comparing : ''}`}
+                      node.data.state ? styles[node.data.state] : ''
+                    } ${node.data.isAnimating ? styles.comparing : ''}`}
                   >
-                    {node.label}
+                    {node.data.label}
                     <div className={styles.arrayIndex}>{index}</div>
                   </div>
                 ))
