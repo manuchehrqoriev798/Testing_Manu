@@ -11,6 +11,7 @@ import DoublyLinkedListVisualizer from './components/visualizers/dataStructures/
 import TreeVisualizer from './components/visualizers/dataStructures/Tree'
 import GraphVisualizer from './components/visualizers/dataStructures/Graph'
 import HeapVisualizer from './components/visualizers/dataStructures/Heap'
+import HashTableVisualizer from './components/visualizers/dataStructures/HashTable'
 
 function App() {
   const [activeVisualizer, setActiveVisualizer] = useState(null)
@@ -35,6 +36,7 @@ function App() {
               <button onClick={() => setActiveVisualizer('tree')}>Tree</button>
               <button onClick={() => setActiveVisualizer('graph')}>Graph</button>
               <button onClick={() => setActiveVisualizer('heap')}>Heap</button>
+              <button onClick={() => setActiveVisualizer('hashtable')}>Hash Table</button>
             </div>
           </div>
         )}
@@ -47,6 +49,7 @@ function App() {
         {activeVisualizer === 'tree' && <TreeVisualizer onBack={handleBack} />}
         {activeVisualizer === 'graph' && <GraphVisualizer onBack={handleBack} />}
         {activeVisualizer === 'heap' && <HeapVisualizer onBack={handleBack} />}
+        {activeVisualizer === 'hashtable' && <HashTableVisualizer onBack={handleBack} />}
       </div>
     </div>
   )
