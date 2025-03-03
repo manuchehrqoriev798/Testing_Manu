@@ -7,6 +7,7 @@ import StackVisualizer from './components/visualizers/dataStructures/Stack'
 import QueueVisualizer from './components/visualizers/dataStructures/Queue'
 import DequeVisualizer from './components/visualizers/dataStructures/Deque'
 import LinkedListVisualizer from './components/visualizers/dataStructures/LinkedList'
+import DoublyLinkedListVisualizer from './components/visualizers/dataStructures/DoublyLinkedList'
 import TreeVisualizer from './components/visualizers/dataStructures/Tree'
 import GraphVisualizer from './components/visualizers/dataStructures/Graph'
 import HeapVisualizer from './components/visualizers/dataStructures/Heap'
@@ -30,6 +31,7 @@ function App() {
               <button onClick={() => setActiveVisualizer('queue')}>Queue</button>
               <button onClick={() => setActiveVisualizer('deque')}>Deque</button>
               <button onClick={() => setActiveVisualizer('linkedlist')}>Linked List</button>
+              <button onClick={() => setActiveVisualizer('doublylinkedlist')}>Doubly Linked List</button>
               <button onClick={() => setActiveVisualizer('tree')}>Tree</button>
               <button onClick={() => setActiveVisualizer('graph')}>Graph</button>
               <button onClick={() => setActiveVisualizer('heap')}>Heap</button>
@@ -41,6 +43,7 @@ function App() {
         {activeVisualizer === 'queue' && <QueueVisualizer onBack={handleBack} />}
         {activeVisualizer === 'deque' && <DequeVisualizer onBack={handleBack} />}
         {activeVisualizer === 'linkedlist' && <LinkedListVisualizer onBack={handleBack} />}
+        {activeVisualizer === 'doublylinkedlist' && <DoublyLinkedListVisualizer onBack={handleBack} />}
         {activeVisualizer === 'tree' && <TreeVisualizer onBack={handleBack} />}
         {activeVisualizer === 'graph' && <GraphVisualizer onBack={handleBack} />}
         {activeVisualizer === 'heap' && <HeapVisualizer onBack={handleBack} />}

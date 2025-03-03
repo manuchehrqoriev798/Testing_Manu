@@ -91,7 +91,7 @@ const CustomNode = ({ data, id }) => {
 // Define nodeTypes outside of components
 const nodeTypes = { custom: CustomNode };
 
-const LinkedListVisualizer = ({ onBack }) => {
+const DoublyLinkedListVisualizer = ({ onBack }) => {
   const [nodeOrder, setNodeOrder] = useState(['node-1']);
   const [nodeData, setNodeData] = useState({ 'node-1': { label: '' } });
   const reactFlowInstance = useReactFlow();
@@ -142,22 +142,49 @@ const LinkedListVisualizer = ({ onBack }) => {
     }));
   }, [nodeOrder, nodeData]);
 
-  // Compute edges based on nodeOrder
+  // Compute edges based on nodeOrder - for doubly linked list we create edges in both directions
   const edges = useMemo(() => {
-    return nodeOrder.slice(0, -1).map((id, index) => ({
-      id: `e${id}-${nodeOrder[index + 1]}`,
-      source: id,
-      target: nodeOrder[index + 1],
-      type: 'default',
-      animated: false,
-      style: { stroke: '#2196F3', strokeWidth: 3 },
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        width: 20,
-        height: 20,
-        color: '#2196F3',
-      },
-    }));
+    const edgesArray = [];
+    
+    // Forward edges (next pointers)
+    nodeOrder.slice(0, -1).forEach((id, index) => {
+      edgesArray.push({
+        id: `next-${id}-${nodeOrder[index + 1]}`,
+        source: id,
+        target: nodeOrder[index + 1],
+        type: 'default',
+        animated: false,
+        style: { stroke: '#2196F3', strokeWidth: 3 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 20,
+          height: 20,
+          color: '#2196F3',
+        },
+      });
+    });
+    
+    // Backward edges (prev pointers)
+    nodeOrder.slice(1).forEach((id, index) => {
+      edgesArray.push({
+        id: `prev-${id}-${nodeOrder[index]}`,
+        source: id,
+        target: nodeOrder[index],
+        type: 'default',
+        animated: false,
+        style: { stroke: '#FF5722', strokeWidth: 2, strokeDasharray: '5,5' },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 15,
+          height: 15,
+          color: '#FF5722',
+        },
+        // Slightly offset the curve of backward edges to avoid overlap
+        curvature: 0.3,
+      });
+    });
+    
+    return edgesArray;
   }, [nodeOrder]);
 
   // Set initial layout once
@@ -184,7 +211,7 @@ const LinkedListVisualizer = ({ onBack }) => {
         <button onClick={onBack} className={styles.backBtn}>
           Back
         </button>
-        <h2 className={styles.title}>Singly Linked List</h2>
+        <h2 className={styles.title}>Doubly Linked List</h2>
       </div>
       <div className={styles.graphContainer} style={{ width: '100%', height: '600px' }}>
         <ReactFlow
@@ -206,10 +233,10 @@ const LinkedListVisualizer = ({ onBack }) => {
 };
 
 // Create a wrapped component to avoid recreating ReactFlowProvider on each render
-const WrappedLinkedListVisualizer = ({ onBack }) => (
+const WrappedDoublyLinkedListVisualizer = ({ onBack }) => (
   <ReactFlowProvider>
-    <LinkedListVisualizer onBack={onBack} />
+    <DoublyLinkedListVisualizer onBack={onBack} />
   </ReactFlowProvider>
 );
 
-export default WrappedLinkedListVisualizer;
+export default WrappedDoublyLinkedListVisualizer; 
