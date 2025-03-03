@@ -18,7 +18,7 @@
 .globalControls {
   position: absolute;
   top: 20px;
-  left: 20px; /* Changed from right to left */
+  left: 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -57,48 +57,174 @@
   background: #3e8e41;
 }
 
-/* Container for all stacks - updating to work with single ReactFlow */
+/* Container for all stacks */
 .stacksContainer {
-  width: 100%;
-  height: 100%;
-  position: relative;
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
-  padding: 20px;
+  justify-content: center;
+  gap: 50px;
+  padding: 100px 20px;
   overflow: auto;
-}
-
-/* New global ReactFlow container */
-.flowContainer {
   width: 100%;
   height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
 }
 
-/* Wrapper for individual stack controls - positioned on the right */
+/* Individual stack wrapper */
 .stackWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 140px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.stackWrapper:hover {
+  transform: translateY(-5px);
+}
+
+.selectedStack {
+  transform: translateY(-5px);
+}
+
+.stackBase {
+  width: 140px;
+  height: 12px;
+  background: linear-gradient(90deg, rgb(44, 62, 80), rgb(74, 100, 145));
+  border-radius: 6px;
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 4px 8px;
+  margin-top: 10px;
+  position: relative;
+}
+
+.selectedStack .stackBase {
+  border: 2px solid #f39c12;
+  box-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+}
+
+.stackLabel {
   position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-weight: bold;
+  margin-top: 8px;
+  color: #2c3e50;
+  text-shadow: 1px 1px 2px rgba(255,255,255,0.7);
+}
+
+.selectedStack .stackLabel {
+  color: #f39c12;
+}
+
+.stackElements {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  min-height: 200px;
+  padding-bottom: 15px;
+}
+
+.stackNode {
+  width: 100px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 5px;
+  border-radius: 4px;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+/* Stack-specific colors */
+.stackNode[data-stack="stack-1"] { background: #f8d7da; border: 2px solid #dc3545; }
+.stackNode[data-stack="stack-2"] { background: #d1ecf1; border: 2px solid #17a2b8; }
+.stackNode[data-stack="stack-3"] { background: #d4edda; border: 2px solid #28a745; }
+.stackNode[data-stack="stack-4"] { background: #fff3cd; border: 2px solid #ffc107; }
+.stackNode[data-stack="stack-5"] { background: #e2e3e5; border: 2px solid #6c757d; }
+.stackNode[data-stack="stack-6"] { background: #cce5ff; border: 2px solid #007bff; }
+.stackNode[data-stack="stack-7"] { background: #f8f9fa; border: 2px solid #343a40; }
+.stackNode[data-stack="stack-8"] { background: #d6d8d9; border: 2px solid #6c757d; }
+
+.stackNode.dragging {
+  opacity: 0.6;
+}
+
+.stackNodeValue {
+  font-weight: bold;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+
+.topIndicator {
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  background: #f39c12;
+  color: white;
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+
+.emptyIndicator {
+  color: #999;
+  font-style: italic;
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.stackNode.highlighted {
+  background: #ffdd57;
+  border: 2px solid #ff8800;
+  box-shadow: 0 0 10px rgba(255, 136, 0, 0.7);
+}
+
+/* Controls container on the right side */
+.controlsContainer {
+  position: fixed;
+  right: 20px;
+  top: 100px;
   width: 250px;
+  z-index: 10;
+}
+
+.stackControls {
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-  padding: 10px;
-  right: 20px; /* Fixed position on the right */
+  margin-bottom: 10px;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
 }
 
-/* Close controls button (renamed from deleteStackBtn) */
-.closeControlsBtn {
+.stackControls.activeControls {
+  opacity: 1;
+}
+
+.stackHeader {
+  font-weight: bold;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  text-align: center;
+  position: relative;
+}
+
+.deleteStackBtn {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 26px;
-  height: 26px;
-  background: linear-gradient(to right, #6c757d, #495057); /* Changed color to indicate close rather than delete */
+  top: 5px;
+  right: 5px;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(to right, #dc3545, #b21f2d);
   color: white;
   border: none;
   border-radius: 50%;
@@ -107,69 +233,18 @@
   justify-content: center;
   cursor: pointer;
   font-size: 16px;
-  z-index: 11;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.closeControlsBtn:hover {
-  background: linear-gradient(to right, #5a6268, #343a40);
-  transform: scale(1.1);
-}
-
-/* Add a separate style for the actual delete button */
-.deleteStackBtn {
-  padding: 8px 16px;
-  background: linear-gradient(to right, #dc3545, #b21f2d);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  margin-top: 10px;
   transition: all 0.3s ease;
 }
 
 .deleteStackBtn:hover {
   background: linear-gradient(to right, #c82333, #9c1723);
+  transform: scale(1.1);
 }
 
-/* Stack node styling with data attributes to identify which stack it belongs to */
-.stackNode {
-  width: 100px;
-  height: 40px;
-  background: white;
-  border: 2px solid #333;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: default;
-  transition: all 0.3s ease;
-  border-radius: 4px;
-  font-size: 14px;
+.controlsContent {
+  padding: 10px;
 }
 
-/* Add stack-specific colors to differentiate nodes */
-.stackNode[data-stack="stack-1"] { background: #f8d7da; border-color: #dc3545; }
-.stackNode[data-stack="stack-2"] { background: #d1ecf1; border-color: #17a2b8; }
-.stackNode[data-stack="stack-3"] { background: #d4edda; border-color: #28a745; }
-.stackNode[data-stack="stack-4"] { background: #fff3cd; border-color: #ffc107; }
-.stackNode[data-stack="stack-5"] { background: #e2e3e5; border-color: #6c757d; }
-.stackNode[data-stack="stack-6"] { background: #cce5ff; border-color: #007bff; }
-.stackNode[data-stack="stack-7"] { background: #f8f9fa; border-color: #343a40; }
-.stackNode[data-stack="stack-8"] { background: #d6d8d9; border-color: #6c757d; }
-
-/* Stack controls container - parent for all controls */
-.stackControls {
-  position: relative;
-  z-index: 100;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* Input group styling */
 .inputGroup {
   display: flex;
   margin-bottom: 8px;
@@ -217,43 +292,6 @@
 .sizeBtn { background: #28a745; }
 .sizeBtn:hover { background: #218838; }
 
-/* Stack header styling */
-.stackHeader {
-  font-weight: bold;
-  padding: 5px 0;
-  margin-bottom: 10px;
-  border-bottom: 1px solid #eee;
-  text-align: center;
-}
-
-/* Stack visualization area */
-.stackFlow {
-  flex: 1;
-  background: #ffffff;
-  border-radius: 0 0 8px 8px;
-}
-
-/* Stack node styling */
-.stackNode {
-  width: 100px;
-  height: 40px;
-  background: #eee;
-  border: 1px solid #333;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: default;
-  transition: all 0.3s ease;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.stackNode.highlighted {
-  background: #ffdd57;
-  border: 2px solid #ff8800;
-  box-shadow: 0 0 10px rgba(255, 136, 0, 0.7);
-}
-
 /* Message display */
 .message {
   position: fixed;
@@ -279,29 +317,33 @@
   from { opacity: 1; }
   to { opacity: 0; }
 }
-/* Responsive adjustments need updating for the new layout */
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .stacksContainer {
-    overflow-x: auto;
-  }
-  
-  .stackWrapper {
+  .controlsContainer {
     position: relative;
+    width: 100%;
+    right: auto;
     top: auto;
-    left: auto;
-    margin: 20px;
-    width: 250px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
   }
-  
-  .stackWrapper:nth-child(n) {
-    position: relative;
-    top: auto;
-    left: auto;
+
+  .stackControls {
+    width: 90%;
+    max-width: 350px;
   }
-  
+
   .globalControls {
     width: calc(100% - 40px);
     flex-direction: row;
     justify-content: space-between;
+  }
+  
+  .stacksContainer {
+    flex-direction: column;
+    align-items: center;
   }
 }
