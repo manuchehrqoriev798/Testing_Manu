@@ -604,80 +604,78 @@ const HeapVisualizer = ({ onBack }) => {
 
   return (
     <div className={styles.visualizer}>
-      <div className={styles.container}>
-        <div className={styles.controls}>
-          <button className={styles.btn} onClick={onBack}>
-            Back
-          </button>
+      <div className={styles.controls}>
+        <button className={styles.btn} onClick={onBack}>
+          Back
+        </button>
+        <button 
+          className={styles.btn}
+          onClick={handleHeapTypeSwitch}
+          disabled={isAnimating}
+        >
+          Switch to {heapType === 'max' ? 'Min' : 'Max'} Heap
+        </button>
+        <form onSubmit={handleInputSubmit}>
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Enter a number"
+            className={styles.input}
+            disabled={isAnimating}
+          />
           <button 
+            type="submit" 
             className={styles.btn}
-            onClick={handleHeapTypeSwitch}
             disabled={isAnimating}
           >
-            Switch to {heapType === 'max' ? 'Min' : 'Max'} Heap
+            Insert
           </button>
-          <form onSubmit={handleInputSubmit}>
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Enter a number"
-              className={styles.input}
-              disabled={isAnimating}
-            />
-            <button 
-              type="submit" 
-              className={styles.btn}
-              disabled={isAnimating}
-            >
-              Insert
-            </button>
-          </form>
-        </div>
-        
-        <div className={styles.flowContainer}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            nodeTypes={nodeTypes}
-            fitView
-            minZoom={0.1}
-            maxZoom={4}
-            defaultEdgeOptions={{
-              type: 'smoothstep',
-              animated: false
-            }}
-          >
-            <Background />
-            <Controls />
-          </ReactFlow>
-        </div>
+        </form>
+      </div>
+      
+      <div className={styles.flowContainer}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          nodeTypes={nodeTypes}
+          fitView
+          minZoom={0.1}
+          maxZoom={4}
+          defaultEdgeOptions={{
+            type: 'smoothstep',
+            animated: false
+          }}
+        >
+          <Background />
+          <Controls />
+        </ReactFlow>
+      </div>
 
-        {/* Array Visualization */}
-        <div className={styles.arraySection}>
-          <div className={styles.arrayLabel}>Heap Array Representation</div>
-          <div className={styles.arrayVisualization}>
-            <div className={styles.arrayContainer}>
-              {nodes.length > 0 ? (
-                nodes.map((node, index) => (
-                  <div 
-                    key={`array-${node.id}`}
-                    className={`${styles.arrayNode} ${
-                      node.data.state ? styles[node.data.state] : ''
-                    } ${node.data.isAnimating ? styles.comparing : ''}`}
-                  >
-                    {node.data.label}
-                    <div className={styles.arrayIndex}>{index}</div>
-                  </div>
-                ))
-              ) : (
-                <div className={styles.emptyMessage}>
-                  Heap is empty. Add some numbers!
+      {/* Array Visualization */}
+      <div className={styles.arraySection}>
+        <div className={styles.arrayLabel}>Heap Array Representation</div>
+        <div className={styles.arrayVisualization}>
+          <div className={styles.arrayContainer}>
+            {nodes.length > 0 ? (
+              nodes.map((node, index) => (
+                <div 
+                  key={`array-${node.id}`}
+                  className={`${styles.arrayNode} ${
+                    node.data.state ? styles[node.data.state] : ''
+                  } ${node.data.isAnimating ? styles.comparing : ''}`}
+                >
+                  {node.data.label}
+                  <div className={styles.arrayIndex}>{index}</div>
                 </div>
-              )}
-            </div>
+              ))
+            ) : (
+              <div className={styles.emptyMessage}>
+                Heap is empty. Add some numbers!
+              </div>
+            )}
           </div>
         </div>
       </div>
