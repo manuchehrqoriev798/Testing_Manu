@@ -1,7 +1,7 @@
 /* Deque visualizer container */
-.visualizer {
-  width: 100%;
-  height: 100%;
+.dequeVisualizerContent {
+  width: 100vw;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -16,67 +16,85 @@
 }
 
 /* Controls container */
-.controls {
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  width: 280px;
-  background: white;
+.dequeControls {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  z-index: 1000 !important;
+  background-color: white;
   border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   padding: 15px;
-  transition: all 0.3s ease;
+  width: 280px;
 }
 
 /* Add hover effect */
-.controls:hover {
+.dequeControls:hover {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Deque header styling */
+.dequeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-weight: bold;
+  font-size: 18px;
 }
 
 /* Button styling */
 .btn {
-  padding: 8px 16px;
-  background: #007bff;
-  color: white;
+  padding: 8px 12px;
   border: none;
   border-radius: 4px;
+  color: white;
   cursor: pointer;
   font-size: 14px;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  margin-bottom: 8px;
 }
 
-.btn:hover {
-  background: #0069d9;
+.addBtn {
+  background: #28a745;
 }
 
-/* Specific button styling */
-.addFirstBtn { background: #28a745; }
-.addFirstBtn:hover { background: #218838; }
+.addBtn:hover {
+  background: #218838;
+}
 
-.addLastBtn { background: #17a2b8; }
-.addLastBtn:hover { background: #138496; }
+.removeBtn {
+  background: #dc3545;
+}
 
-.removeFirstBtn { background: #dc3545; }
-.removeFirstBtn:hover { background: #c82333; }
+.removeBtn:hover {
+  background: #c82333;
+}
 
-.removeLastBtn { background: #fd7e14; }
-.removeLastBtn:hover { background: #e96b02; }
+.peekBtn {
+  background: #17a2b8;
+}
 
-.peekFirstBtn { background: #6610f2; }
-.peekFirstBtn:hover { background: #520dc2; }
+.peekBtn:hover {
+  background: #138496;
+}
 
-.peekLastBtn { background: #6f42c1; }
-.peekLastBtn:hover { background: #5e35b1; }
+.clearBtn {
+  background: #6c757d;
+}
 
-.clearBtn { background: #dc3545; }
-.clearBtn:hover { background: #c82333; }
+.clearBtn:hover {
+  background: #5a6268;
+}
 
-.isEmptyBtn { background: #6c757d; }
-.isEmptyBtn:hover { background: #5a6268; }
+.deleteBtn {
+  background: #e74c3c;
+}
 
-.sizeBtn { background: #20c997; }
-.sizeBtn:hover { background: #199d76; }
+.deleteBtn:hover {
+  background: #c0392b;
+}
 
 /* Input styling */
 .input {
@@ -88,26 +106,140 @@
   width: 100%;
 }
 
+/* Deque base styling */
+.dequeBase {
+  width: 140px;
+  height: 12px;
+  background: linear-gradient(90deg, #2c3e50, #4a6491);
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  z-index: 5;
+  margin-top: 2px;
+  position: relative;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.dequeBase:active {
+  cursor: grabbing;
+  transform: scale(1.02);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.selectedDequeBase {
+  box-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+  border: 2px solid #f39c12;
+}
+
+/* Deque label node styling */
+.dequeLabelNode {
+  width: 140px;
+  position: relative;
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #34495e;
+  text-align: center;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: #ecf0f1;
+  border: 1px solid #bdc3c7;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+}
+
+.dequeLabelNode:hover {
+  color: #f39c12;
+  transform: scale(1.05);
+  background-color: #f9f9f9;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+}
+
+.selectedDequeBase .dequeLabelNode {
+  color: #f39c12;
+  font-weight: 700;
+}
+
+.dequeLabelNode:active {
+  cursor: grabbing;
+  transform: scale(1.02);
+  box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
 /* Deque node styling */
 .dequeNode {
   width: 60px;
   height: 40px;
   background: white;
-  border: 2px solid #333;
+  border: 2px solid #2c3e50;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: default;
+  font-size: 16px;
+  color: #2c3e50;
   transition: all 0.3s ease;
-  border-radius: 4px;
-  font-size: 14px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-/* Deque-specific colors */
-.dequeNode[data-deque="deque-1"] { background: #fff3cd; border-color: #ffc107; }
-.dequeNode[data-deque="deque-2"] { background: #d1ecf1; border-color: #17a2b8; }
-.dequeNode[data-deque="deque-3"] { background: #d4edda; border-color: #28a745; }
-.dequeNode[data-deque="deque-4"] { background: #f8d7da; border-color: #dc3545; }
+.dequeNode.highlighted {
+  background: #f39c12;
+  color: white;
+  border-color: #e67e22;
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Ensure smooth movement during drag */
+[data-dragging="true"] {
+  transition: none;
+}
+
+/* Add smooth movement for ReactFlow nodes */
+:global(.react-flow__node) {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Optimize performance */
+.dequeBase,
+.dequeNode,
+.dequeLabelNode {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Deque-specific colors for different deques */
+.dequeNode[data-deque="deque-1"] {
+  background: #fff3cd;
+  border-color: #ffc107;
+}
+
+.dequeNode[data-deque="deque-2"] {
+  background: #d1ecf1;
+  border-color: #17a2b8;
+}
+
+.dequeNode[data-deque="deque-3"] {
+  background: #d4edda;
+  border-color: #28a745;
+}
+
+.dequeNode[data-deque="deque-4"] {
+  background: #f8d7da;
+  border-color: #dc3545;
+}
 
 /* Message display */
 .message {
@@ -135,13 +267,55 @@
   to { opacity: 0; }
 }
 
+/* Close button styling */
+.closeButton {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  color: #c0392b;
+}
+
+/* Delete deque button styling */
+.deleteDequeBtn {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.deleteDequeBtn:hover {
+  color: #c0392b;
+}
+
+/* Input group styling */
+.inputGroup {
+  margin-bottom: 16px;
+}
+
+/* Button group styling */
+.buttonGroup {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .controls {
+  .dequeControls {
     position: relative;
     top: auto;
     left: auto;
     width: calc(100% - 40px);
     margin: 20px;
   }
-} 
+}
