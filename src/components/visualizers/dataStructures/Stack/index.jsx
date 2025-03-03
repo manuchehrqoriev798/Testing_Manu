@@ -1,230 +1,415 @@
-import React, { useState, useCallback } from 'react';
-import ReactFlow, { ReactFlowProvider, Controls, Background, applyNodeChanges } from 'reactflow';
+import React, { useState, useCallback, useMemo } from 'react';
+import ReactFlow, { ReactFlowProvider, Controls, Background } from 'reactflow';
 import 'reactflow/dist/style.css';
 import styles from './styles.module.css';
 
 // Constants for stack positioning
-const STACK_X = 50;         // X-position of the stack
-const STACK_BASE_Y = 100;   // Starting Y-position of the stack
-const HEIGHT = 50;          // Height of each stack element plus spacing
+const HEIGHT = 60;          // Increased height for more spacing
 const THRESHOLD = 100;      // Distance threshold for popping via drag
 
-// Custom StackNode component
+// Define a more visually appealing StackNode component
 const StackNode = ({ data }) => {
-  const { label, isHighlighted } = data;
-  
   return (
     <div
-      style={{
-        width: 100,
-        height: 40,
-        background: isHighlighted ? '#ffdd57' : '#eee',
-        border: isHighlighted ? '2px solid #ff8800' : '1px solid #333',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: data.isTop ? 'grab' : 'default',
-        transition: 'all 0.3s ease',
-        boxShadow: isHighlighted ? '0 0 10px rgba(255, 136, 0, 0.7)' : 'none',
-      }}
+      className={`${styles.stackNode} ${data.isHighlighted ? styles.highlighted : ''}`}
+      data-stack={data.stackId}
     >
-      {label}
+      <div className={styles.stackNodeContent}>
+        <span className={styles.stackNodeValue}>{data.label}</span>
+        {data.isTop && <div className={styles.topIndicator}>TOP</div>}
+      </div>
     </div>
   );
 };
 
-// Main content component
-const GraphVisualizerContent = ({ onBack }) => {
-  const [nodes, setNodes] = useState([]);
-  const [stackOrder, setStackOrder] = useState([]);
-  const [inputValue, setInputValue] = useState('');
-  const [isDraggingTop, setIsDraggingTop] = useState(false);
-  const [highlightedNodeId, setHighlightedNodeId] = useState(null);
+// Create nodeTypes object outside of component
+const nodeTypes = { stackNode: StackNode };
+
+// Main Stack Visualizer Component
+const StackVisualizerContent = ({ onBack }) => {
+  // State for multiple stacks
+  const [stacks, setStacks] = useState([
+    {
+      id: 'stack-1',
+      name: 'Stack 1',
+      elements: [],
+      position: { x: 200, y: 300 },
+      baseY: 300
+    }
+  ]);
+  
+  // Add state to track which stack is currently selected
+  const [selectedStackId, setSelectedStackId] = useState('stack-1');
+  
   const [message, setMessage] = useState(null);
-
-  // Push a new value onto the stack
-  const pushToStack = useCallback((value) => {
-    if (!value.trim()) return;
-    const newNodeId = `stack-${Date.now()}`;
-    const newNode = {
-      id: newNodeId,
-      type: 'stackNode',
-      data: { label: value },
-      position: { x: STACK_X, y: STACK_BASE_Y },
-    };
-    setNodes((nds) => [newNode, ...nds]);
-    setStackOrder((order) => [newNodeId, ...order]);
-    setInputValue('');
-  }, []);
-
-  // Pop the top element from the stack
-  const popFromStack = useCallback(() => {
-    if (stackOrder.length === 0) return;
-    const topId = stackOrder[0];
-    setNodes((nds) => nds.filter((node) => node.id !== topId));
-    setStackOrder((order) => order.slice(1));
-  }, [stackOrder]);
-
-  // Show a message for a short time
-  const showMessage = useCallback((text) => {
+  
+  // Helper function to show messages
+  const showMessage = useCallback((text, duration = 2000) => {
     setMessage(text);
-    setTimeout(() => {
-      setMessage(null);
-    }, 2000);
+    setTimeout(() => setMessage(null), duration);
   }, []);
   
-  // Peek at the top element
-  const peekStack = useCallback(() => {
-    if (stackOrder.length === 0) {
-      showMessage("Stack is empty - nothing to peek!");
-      return;
-    }
-    const topId = stackOrder[0];
-    setHighlightedNodeId(topId);
-    showMessage(`Peek: ${nodes.find(n => n.id === topId)?.data.label}`);
+  // Create combined nodes for all stacks
+  const allNodes = useMemo(() => {
+    return stacks.flatMap(stack => {
+      // Create stack elements (growing upward)
+      const elementNodes = stack.elements.map((item, index) => ({
+        id: `${stack.id}-node-${item.id}`,
+        type: 'stackNode',
+        data: { 
+          label: item.value, 
+          isHighlighted: item.isHighlighted,
+          isTop: index === 0,
+          stackId: stack.id
+        },
+        position: { 
+          x: stack.position.x, 
+          y: stack.position.y - ((stack.elements.length - index) * HEIGHT)
+        },
+        draggable: index === 0,
+        // Add styling directly to node
+        style: {
+          transition: 'all 0.3s ease',
+        }
+      }));
+      
+      // Add a more visually appealing base platform for the stack
+      const baseNode = {
+        id: `${stack.id}-base`,
+        type: 'default',
+        data: { 
+          label: '',
+          // Add custom data for event handling
+          stackId: stack.id,
+          onClick: () => setSelectedStackId(stack.id)
+        },
+        position: { 
+          x: stack.position.x, 
+          y: stack.position.y 
+        },
+        draggable: false,
+        style: {
+          width: '140px',
+          height: '12px',
+          background: `linear-gradient(90deg, #2c3e50, #4a6491)`,
+          borderRadius: '6px',
+          transform: 'translateX(-20px)',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+          cursor: 'pointer', // Add pointer cursor to indicate clickability
+          border: stack.id === selectedStackId ? '2px solid #f39c12' : 'none', // Highlight selected stack
+        },
+      };
+      
+      // Create a more stylish stack label node
+      const labelNode = {
+        id: `${stack.id}-label`,
+        type: 'default',
+        data: { 
+          label: stack.name,
+          // Add custom data for event handling
+          stackId: stack.id,
+          onClick: () => setSelectedStackId(stack.id)
+        },
+        position: { 
+          x: stack.position.x, 
+          y: stack.position.y + 25
+        },
+        draggable: false,
+        style: {
+          background: 'transparent',
+          border: 'none',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          color: stack.id === selectedStackId ? '#f39c12' : '#2c3e50', // Highlight selected stack
+          width: '100px',
+          textAlign: 'center',
+          textShadow: '1px 1px 2px rgba(255,255,255,0.7)',
+          cursor: 'pointer', // Add pointer cursor
+        }
+      };
+      
+      return [...elementNodes, baseNode, labelNode];
+    });
+  }, [stacks, selectedStackId]);
+  
+  // Push operation
+  const pushToStack = useCallback((stackId, value) => {
+    if (!value.trim()) return;
     
-    // Clear highlight after 1.5 seconds
-    setTimeout(() => {
-      setHighlightedNodeId(null);
-    }, 1500);
-  }, [stackOrder, nodes, showMessage]);
+    setStacks(prevStacks => 
+      prevStacks.map(stack => {
+        if (stack.id === stackId) {
+          return {
+            ...stack,
+            elements: [
+              { id: Date.now(), value: value, isHighlighted: false },
+              ...stack.elements
+            ]
+          };
+        }
+        return stack;
+      })
+    );
+    
+    showMessage(`Pushed "${value}" to ${stackId}`);
+  }, [showMessage]);
   
-  // Clear the entire stack
-  const clearStack = useCallback(() => {
-    if (stackOrder.length === 0) {
-      showMessage("Stack is already empty!");
+  // Pop operation
+  const popFromStack = useCallback((stackId) => {
+    setStacks(prevStacks => 
+      prevStacks.map(stack => {
+        if (stack.id === stackId) {
+          if (stack.elements.length === 0) {
+            showMessage("Cannot pop from empty stack");
+            return stack;
+          }
+          
+          const poppedValue = stack.elements[0].value;
+          showMessage(`Popped "${poppedValue}" from ${stackId}`);
+          
+          return {
+            ...stack,
+            elements: stack.elements.slice(1)
+          };
+        }
+        return stack;
+      })
+    );
+  }, [showMessage]);
+  
+  // Peek operation
+  const peekStack = useCallback((stackId) => {
+    const stack = stacks.find(s => s.id === stackId);
+    if (!stack || stack.elements.length === 0) {
+      showMessage("Cannot peek empty stack");
       return;
     }
-    setNodes([]);
-    setStackOrder([]);
-    showMessage("Stack cleared!");
-  }, [stackOrder.length, showMessage]);
+    
+    setStacks(prevStacks => 
+      prevStacks.map(s => {
+        if (s.id === stackId) {
+          return {
+            ...s,
+            elements: s.elements.map((el, idx) => 
+              idx === 0 ? { ...el, isHighlighted: true } : el
+            )
+          };
+        }
+        return s;
+      })
+    );
+    
+    showMessage(`Peek: "${stack.elements[0].value}"`);
+    
+    setTimeout(() => {
+      setStacks(prevStacks => 
+        prevStacks.map(s => {
+          if (s.id === stackId) {
+            return {
+              ...s,
+              elements: s.elements.map(el => ({ ...el, isHighlighted: false }))
+            };
+          }
+          return s;
+        })
+      );
+    }, 2000);
+  }, [stacks, showMessage]);
   
-  // Check if the stack is empty
-  const isEmptyStack = useCallback(() => {
-    const isEmpty = stackOrder.length === 0;
-    showMessage(isEmpty ? "Stack is empty" : "Stack is not empty");
-  }, [stackOrder.length, showMessage]);
+  // Clear operation
+  const clearStack = useCallback((stackId) => {
+    setStacks(prevStacks => 
+      prevStacks.map(stack => {
+        if (stack.id === stackId) {
+          return { ...stack, elements: [] };
+        }
+        return stack;
+      })
+    );
+    
+    showMessage(`Cleared ${stackId}`);
+  }, [showMessage]);
   
-  // Get the size of the stack
-  const getStackSize = useCallback(() => {
-    showMessage(`Stack size: ${stackOrder.length}`);
-  }, [stackOrder.length, showMessage]);
-
-  // Handle node position changes during dragging
-  const onNodesChange = useCallback((changes) => {
-    setNodes((nds) => applyNodeChanges(changes, nds));
-  }, []);
-
-  // Start dragging the top node
-  const onNodeDragStart = useCallback((event, node) => {
-    if (node.id === stackOrder[0]) {
-      setIsDraggingTop(true);
+  // isEmpty operation
+  const isEmptyStack = useCallback((stackId) => {
+    const stack = stacks.find(s => s.id === stackId);
+    if (!stack) return;
+    
+    const isEmpty = stack.elements.length === 0;
+    showMessage(`isEmpty: ${isEmpty}`);
+  }, [stacks, showMessage]);
+  
+  // Size operation
+  const getStackSize = useCallback((stackId) => {
+    const stack = stacks.find(s => s.id === stackId);
+    if (!stack) return;
+    
+    showMessage(`Size: ${stack.elements.length}`);
+  }, [stacks, showMessage]);
+  
+  // Delete a stack
+  const deleteStack = useCallback((stackId) => {
+    setStacks(prevStacks => prevStacks.filter(stack => stack.id !== stackId));
+    
+    // If we're deleting the currently selected stack, select another one
+    if (selectedStackId === stackId) {
+      setSelectedStackId(stacks.find(stack => stack.id !== stackId)?.id || null);
     }
-  }, [stackOrder]);
-
-  // Handle drag stop to decide removal or snap-back
-  const onNodeDragStop = useCallback((event, node) => {
-    if (node.id === stackOrder[0]) {
-      setIsDraggingTop(false);
-      const dx = node.position.x - STACK_X;
-      if (Math.abs(dx) > THRESHOLD) {
-        popFromStack();
-      } else {
-        setNodes((nds) =>
-          nds.map((n) => {
-            if (n.id === node.id) {
-              return { ...n, position: { x: STACK_X, y: STACK_BASE_Y } };
-            }
-            return n;
-          })
-        );
-      }
-    }
-  }, [stackOrder, popFromStack]);
-
-  // Map stack order to ReactFlow nodes
-  const flowNodes = stackOrder.map((nodeId, index) => {
-    const node = nodes.find((n) => n.id === nodeId);
-    if (!node) return null;
-    const isTop = index === 0;
-    const isHighlighted = nodeId === highlightedNodeId;
-    const position = isTop && isDraggingTop ? node.position : { x: STACK_X, y: STACK_BASE_Y + index * HEIGHT };
-    return {
-      ...node,
-      position,
-      draggable: isTop,
-      data: {
-        ...node.data,
-        isTop,
-        isHighlighted,
-      },
+    
+    showMessage(`Deleted ${stackId}`);
+  }, [stacks, selectedStackId, showMessage]);
+  
+  // Add a new stack with offset position
+  const addNewStack = useCallback(() => {
+    const newStackId = `stack-${stacks.length + 1}`;
+    const newStack = {
+      id: newStackId,
+      name: `Stack ${stacks.length + 1}`,
+      elements: [],
+      position: { x: 200 + (stacks.length * 150), y: 300 },
+      baseY: 300
     };
-  }).filter(Boolean);
-
+    
+    setStacks(prevStacks => [...prevStacks, newStack]);
+    // Select the newly created stack
+    setSelectedStackId(newStackId);
+    
+    showMessage(`Added new stack: ${newStack.name}`);
+  }, [stacks, showMessage]);
+  
+  // Control panel for stack operations - only show for selected stack
+  const StackControls = React.memo(({ stack }) => {
+    const [inputValue, setInputValue] = useState('');
+    
+    // Only render if this is the selected stack
+    if (stack.id !== selectedStackId) {
+      return null;
+    }
+    
+    return (
+      <div 
+        className={styles.stackWrapper}
+        style={{ 
+          right: '20px',
+          top: '100px'
+        }}
+      >
+        <button 
+          className={styles.deleteStackBtn} 
+          onClick={() => deleteStack(stack.id)}
+        >
+          ×
+        </button>
+        
+        <div className={styles.stackHeader}>{stack.name}</div>
+        
+        <div className={styles.stackControls}>
+          <div className={styles.inputGroup}>
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Enter value"
+              className={styles.input}
+            />
+            <button 
+              onClick={() => {
+                pushToStack(stack.id, inputValue);
+                setInputValue('');
+              }} 
+              className={styles.btn}
+            >
+              Push
+            </button>
+          </div>
+          <div className={styles.buttonGroup}>
+            <button onClick={() => popFromStack(stack.id)} className={styles.btn}>
+              Pop
+            </button>
+            <button onClick={() => peekStack(stack.id)} className={`${styles.btn} ${styles.peekBtn}`}>
+              Peek
+            </button>
+            <button onClick={() => clearStack(stack.id)} className={`${styles.btn} ${styles.clearBtn}`}>
+              Clear
+            </button>
+            <button onClick={() => isEmptyStack(stack.id)} className={`${styles.btn} ${styles.isEmptyBtn}`}>
+              Is Empty?
+            </button>
+            <button onClick={() => getStackSize(stack.id)} className={`${styles.btn} ${styles.sizeBtn}`}>
+              Size
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  });
+  
+  // Add custom click handler for ReactFlow nodes
+  const onNodeClick = useCallback((_, node) => {
+    // If the node has a stackId, select that stack
+    if (node.data?.stackId) {
+      setSelectedStackId(node.data.stackId);
+    }
+    
+    // If the node has a custom onClick handler, call it
+    if (typeof node.data?.onClick === 'function') {
+      node.data.onClick();
+    }
+  }, []);
+  
   return (
     <div className={styles.visualizer}>
-      {/* Message display */}
-      {message && <div className={styles.message}>{message}</div>}
-      
-      {/* Controls for stack interaction */}
-      <div className={styles.controls}>
-        <button onClick={onBack} className={styles.btn}>
+      <div className={styles.globalControls}>
+        <button onClick={onBack} className={styles.backBtn}>
           Back
         </button>
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder="Enter value"
-          className={styles.input}
-        />
-        <button onClick={() => pushToStack(inputValue)} className={styles.btn}>
-          Push
-        </button>
-        <button onClick={popFromStack} className={styles.btn}>
-          Pop
-        </button>
-        <button onClick={peekStack} className={`${styles.btn} ${styles.peekBtn}`}>
-          Peek
-        </button>
-        <button onClick={clearStack} className={`${styles.btn} ${styles.clearBtn}`}>
-          Clear
-        </button>
-        <button onClick={isEmptyStack} className={`${styles.btn} ${styles.isEmptyBtn}`}>
-          isEmpty
-        </button>
-        <button onClick={getStackSize} className={`${styles.btn} ${styles.sizeBtn}`}>
-          Size
+        <button onClick={addNewStack} className={styles.addStackBtn}>
+          Add New Stack
         </button>
       </div>
-
-      {/* ReactFlow component taking full screen */}
-      <div style={{ width: '100vw', height: '100vh' }}>
+      
+      {message && <div className={styles.message}>{message}</div>}
+      
+      <div className={styles.flowContainer}>
         <ReactFlow
-          nodes={flowNodes}
+          nodes={allNodes}
           edges={[]}
-          nodeTypes={{ stackNode: StackNode }}
-          onNodesChange={onNodesChange}
-          onNodeDragStart={onNodeDragStart}
-          onNodeDragStop={onNodeDragStop}
+          nodeTypes={nodeTypes}
+          onNodeClick={onNodeClick}
+          onNodeDragStop={(_, node) => {
+            const stackId = node.data.stackId;
+            const stack = stacks.find(s => s.id === stackId);
+            
+            if (stack && node.data.isTop) {
+              const yPos = node.position.y;
+              const baseY = stack.position.y;
+              if (Math.abs(yPos - baseY) > THRESHOLD) {
+                popFromStack(stackId);
+              }
+            }
+          }}
           fitView
+          style={{ width: '100%', height: '100%' }}
         >
           <Background />
           <Controls />
         </ReactFlow>
       </div>
+      
+      {stacks.map(stack => (
+        <StackControls key={stack.id} stack={stack} />
+      ))}
     </div>
   );
 };
 
 // Wrap in ReactFlowProvider
-const GraphVisualizer = (props) => {
+const StackVisualizer = (props) => {
   return (
     <ReactFlowProvider>
-      <GraphVisualizerContent {...props} />
+      <StackVisualizerContent {...props} />
     </ReactFlowProvider>
   );
 };
 
-export default GraphVisualizer;
+export default StackVisualizer;

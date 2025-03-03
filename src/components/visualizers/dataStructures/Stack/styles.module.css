@@ -1,78 +1,268 @@
 .visualizer {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   margin: 0;
   padding: 0;
-}
-
-.controls {
-  padding: 10px;
-  background: #f9f9f9;
-  border-bottom: 1px solid #ddd;
-  display: flex;
-  gap: 10px;
-  z-index: 10;
+  background-color: #f5f5f5;
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
+  right: 0;
+  bottom: 0;
 }
 
-.btn {
-  padding: 5px 10px;
-  background: #007bff;
+/* Global controls at left side */
+.globalControls {
+  position: absolute;
+  top: 20px;
+  left: 20px; /* Changed from right to left */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 20;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.backBtn {
+  padding: 8px 16px;
+  background: #6c757d;
   color: white;
   border: none;
+  border-radius: 4px;
   cursor: pointer;
+  font-size: 14px;
 }
 
-.btn:hover {
-  background: #0056b3;
-}
-
-.peekBtn {
-  background: #28a745;
-}
-
-.peekBtn:hover {
-  background: #218838;
-}
-
-.clearBtn {
-  background: #dc3545;
-}
-
-.clearBtn:hover {
-  background: #c82333;
-}
-
-.isEmptyBtn {
-  background: #6c757d;
-}
-
-.isEmptyBtn:hover {
+.backBtn:hover {
   background: #5a6268;
 }
 
-.sizeBtn {
-  background: #17a2b8;
+.addStackBtn {
+  padding: 8px 16px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
 }
 
-.sizeBtn:hover {
-  background: #138496;
+.addStackBtn:hover {
+  background: #3e8e41;
 }
 
-.message {
+/* Container for all stacks - updating to work with single ReactFlow */
+.stacksContainer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px;
+  overflow: auto;
+}
+
+/* New global ReactFlow container */
+.flowContainer {
+  width: 100%;
+  height: 100%;
   position: absolute;
-  top: 60px;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+/* Wrapper for individual stack controls - positioned on the right */
+.stackWrapper {
+  position: absolute;
+  width: 250px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  padding: 10px;
+  right: 20px; /* Fixed position on the right */
+}
+
+/* Close controls button (renamed from deleteStackBtn) */
+.closeControlsBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  background: linear-gradient(to right, #6c757d, #495057); /* Changed color to indicate close rather than delete */
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  z-index: 11;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.closeControlsBtn:hover {
+  background: linear-gradient(to right, #5a6268, #343a40);
+  transform: scale(1.1);
+}
+
+/* Add a separate style for the actual delete button */
+.deleteStackBtn {
+  padding: 8px 16px;
+  background: linear-gradient(to right, #dc3545, #b21f2d);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+}
+
+.deleteStackBtn:hover {
+  background: linear-gradient(to right, #c82333, #9c1723);
+}
+
+/* Stack node styling with data attributes to identify which stack it belongs to */
+.stackNode {
+  width: 100px;
+  height: 40px;
+  background: white;
+  border: 2px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Add stack-specific colors to differentiate nodes */
+.stackNode[data-stack="stack-1"] { background: #f8d7da; border-color: #dc3545; }
+.stackNode[data-stack="stack-2"] { background: #d1ecf1; border-color: #17a2b8; }
+.stackNode[data-stack="stack-3"] { background: #d4edda; border-color: #28a745; }
+.stackNode[data-stack="stack-4"] { background: #fff3cd; border-color: #ffc107; }
+.stackNode[data-stack="stack-5"] { background: #e2e3e5; border-color: #6c757d; }
+.stackNode[data-stack="stack-6"] { background: #cce5ff; border-color: #007bff; }
+.stackNode[data-stack="stack-7"] { background: #f8f9fa; border-color: #343a40; }
+.stackNode[data-stack="stack-8"] { background: #d6d8d9; border-color: #6c757d; }
+
+/* Stack controls container - parent for all controls */
+.stackControls {
+  position: relative;
+  z-index: 100;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Input group styling */
+.inputGroup {
+  display: flex;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px 0 0 4px;
+  outline: none;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.btn {
+  padding: 6px 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn:hover {
+  background: #0069d9;
+}
+
+/* Specific button styling */
+.peekBtn { background: #17a2b8; }
+.peekBtn:hover { background: #138496; }
+
+.clearBtn { background: #dc3545; }
+.clearBtn:hover { background: #c82333; }
+
+.isEmptyBtn { background: #6c757d; }
+.isEmptyBtn:hover { background: #5a6268; }
+
+.sizeBtn { background: #28a745; }
+.sizeBtn:hover { background: #218838; }
+
+/* Stack header styling */
+.stackHeader {
+  font-weight: bold;
+  padding: 5px 0;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  text-align: center;
+}
+
+/* Stack visualization area */
+.stackFlow {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 0 0 8px 8px;
+}
+
+/* Stack node styling */
+.stackNode {
+  width: 100px;
+  height: 40px;
+  background: #eee;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.stackNode.highlighted {
+  background: #ffdd57;
+  border: 2px solid #ff8800;
+  box-shadow: 0 0 10px rgba(255, 136, 0, 0.7);
+}
+
+/* Message display */
+.message {
+  position: fixed;
+  top: 80px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.7);
   color: white;
-  padding: 8px 16px;
+  padding: 10px 20px;
   border-radius: 4px;
   z-index: 100;
   animation: fadeIn 0.3s, fadeOut 0.3s 1.7s;
@@ -89,8 +279,29 @@
   from { opacity: 1; }
   to { opacity: 0; }
 }
-
-.input {
-  padding: 5px;
-  border: 1px solid #ccc;
+/* Responsive adjustments need updating for the new layout */
+@media (max-width: 768px) {
+  .stacksContainer {
+    overflow-x: auto;
+  }
+  
+  .stackWrapper {
+    position: relative;
+    top: auto;
+    left: auto;
+    margin: 20px;
+    width: 250px;
+  }
+  
+  .stackWrapper:nth-child(n) {
+    position: relative;
+    top: auto;
+    left: auto;
+  }
+  
+  .globalControls {
+    width: calc(100% - 40px);
+    flex-direction: row;
+    justify-content: space-between;
+  }
 }
